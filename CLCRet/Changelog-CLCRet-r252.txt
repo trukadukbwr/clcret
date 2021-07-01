@@ -1,0 +1,33 @@
+------------------------------------------------------------------------
+r252 | abija | 2016-09-03 07:36:55 +0000 (Sat, 03 Sep 2016) | 1 line
+Changed paths:
+   M /trunk/retmodule/rotation.lua
+
+- blade of justice id fix
+------------------------------------------------------------------------
+r251 | abija | 2016-08-30 15:32:53 +0000 (Tue, 30 Aug 2016) | 1 line
+Changed paths:
+   M /trunk/Options/options.lua
+   M /trunk/clcret.lua
+
+- hopefully fixed brainfart error
+------------------------------------------------------------------------
+r250 | abija | 2016-08-29 18:01:02 +0000 (Mon, 29 Aug 2016) | 1 line
+Changed paths:
+   M /trunk/retmodule/rotation.lua
+
+- fix various t4 talents being used instead of boj
+------------------------------------------------------------------------
+r249 | abija | 2016-08-29 16:11:40 +0000 (Mon, 29 Aug 2016) | 5 lines
+Changed paths:
+   M /trunk/CLCRet.toc
+   M /trunk/Options/CLCRet_Options.toc
+   M /trunk/retmodule/options.lua
+   M /trunk/retmodule/rotation.lua
+
+- pre legion update
+- tried to implement the rotations:
+  - j tv5 cs2 boj tv_tfoj cons cs bl tv
+  - j jv5 tv5 cs2 boj jv tv_tfoj cons cs bl tv
+  (from: http://www.mmo-champion.com/threads/2032993-7-0-Retribution-Paladin-Guide-and-Discussion)
+------------------------------------------------------------------------
