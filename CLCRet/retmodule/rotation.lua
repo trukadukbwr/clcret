@@ -1,6 +1,3 @@
-
--- truk specials = tvx, ashx, es esj esfr boss only. s s5 boss only
-
 -- Thanks to Shibou for the API Wrapper code
 
 -- Pulls back the Addon-Local Variables and store them locally.
@@ -188,6 +185,8 @@ local ln_debuff_FinalReckoning10 = GetSpellInfo(343724)
 local s1, s2
 local s_ctime, s_otime, s_gcd, s_hp, s_dp, s_aw, s_ss, s_dc, s_fv, s_bc, s_haste, s_in_execute_range
 local s_CrusaderStrikeCharges = 0
+local s_HoWCharges = 0
+local s_VanquishersHammerCharges = 0
 local s_CrucibleCharges = 0
 local s_buff_DivinePurpose, s_buff_TheFiresOfJustice, s_buff_rv, s_buff_ds, s_buff_ds2, s_buff_aw, s_buff_ha, s_buff_vanq, s_buff_MagJ, s_buff_FinalVerdict, s_buff_RighteousVerdict
 local s_debuff_Judgement, s_debuff_Exec, s_debuff_FinalReckoning50, s_debuff_FinalReckoning10
@@ -230,6 +229,24 @@ end
 
 local function GetHoWData()
 	local charges, maxCharges, start, duration = GetSpellCharges(idHoW)
+	if (charges >= 2) then
+		return 0, 2
+	end
+
+	if start == nil then
+		return 100, charges
+	end
+	local cd = start + duration - s_ctime - s_gcd
+	if cd < 0 then
+		return 0, min(2, charges + 1)
+	end
+
+	return cd, charges
+end
+
+
+local function GetVHData()
+	local charges, maxCharges, start, duration = GetSpellCharges(idVanq)
 	if (charges >= 2) then
 		return 0, 2
 	end
@@ -697,11 +714,30 @@ local actions = {
 	-- ----------------------------------
 
 	--Final Reckoning
+	--fr = {
+	--	id = idFinal,
+	--	GetCD = function()
+	--	level = UnitLevel("target")
+	--		if (s1 ~= idFinal) and (s_debuff_Judgement > 1) and (s_hp >= 3) and ((level < 0) or (level > 61)) then
+	--			return GetCooldown(idFinal)
+	--		end
+	--		return 100
+	--	end,
+	--	UpdateStatus = function()
+	--		s_ctime = s_ctime + s_gcd + 1.5 / s_haste
+	--
+	--	end,
+	--	info = "Final Reckoning",
+	--	reqTalent = 22634,
+	--},
+
+
+
+	--Final Reckoning
 	fr = {
 		id = idFinal,
 		GetCD = function()
-		level = UnitLevel("target")
-			if (s1 ~= idFinal) and (s_debuff_Judgement > 1) and (s_hp >= 3) and ((level < 0) or (level > 61)) then
+			if (s1 ~= idFinal) and (s_hp >= 3) then
 				return GetCooldown(idFinal)
 			end
 			return 100
@@ -795,7 +831,7 @@ local actions = {
 		GetCD = function()
 		-- level = UnitLevel("target")
 		-- ((level < 0) or (level > 61))
-			if ((((GetCooldown(idFinal) > 1) and (s_debuff_FinalReckoning50 > 1))) or ((GetCooldown(idFinal) > 10) and (GetCooldown(idFinal) < 55))) and ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_hp >= 2 and s_buff_DivinePurpose > 0)) then
+			if ((((GetCooldown(idFinal) > 1) and (s_debuff_FinalReckoning50 > 1))) or ((GetCooldown(idFinal) > 1) and (GetCooldown(idFinal) < 58))) and ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_hp >= 2 and s_buff_DivinePurpose > 0)) then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
@@ -925,19 +961,52 @@ local actions = {
 	vh = {
 		id = idVanq,
 		GetCD = function()
-		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s_hp >= 3) and ((C_QuestLog.IsQuestFlaggedCompleted(60021) and (UiMapID == 1536) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328204)) then
+			local cd, charges = GetCSData()
+			UiMapID = C_Map.GetBestMapForUnit("player")
+			if (s_VanquishersHammerCharges == 1) and ((C_QuestLog.IsQuestFlaggedCompleted(60021) and (UiMapID == 1536) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328204)) then
 				return GetCooldown(idVanq)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-			s_hp = min(1, s_hp - 1)
+			if (s_buff_ha > 0) then
+				s_hp = min(3, s_hp + 3)
+			else
+				s_hp = min(3, s_hp + 1)
+			s_VanquishersHammerCharges = max(0, s_VanquishersHammerCharges - 1)
+			end
 
 		end,
-		info = "Vanquisher's Hammer (Necrolord)",
+		info = "Vanquisher's Hammer (Necrolord) [Use for VH @ 1 Charge with Lego]",
 	},
+
+
+	vh2 = {
+		id = idVanq,
+		GetCD = function()
+			local cd, charges = GetCSData()
+			UiMapID = C_Map.GetBestMapForUnit("player")
+			if (s_VanquishersHammerCharges == 2) and ((C_QuestLog.IsQuestFlaggedCompleted(60021) and (UiMapID == 1536) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328204)) then
+				return GetCooldown(idVanq)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			if (s_buff_ha > 0) then
+				s_hp = min(3, s_hp + 3)
+			else
+				s_hp = min(3, s_hp + 1)
+			s_VanquishersHammerCharges = max(0, s_VanquishersHammerCharges - 1)
+			end
+
+		end,
+		info = "Vanquisher's Hammer (Necrolord) @ 2 Charges [with Lego]",
+	},
+
 
 	--Divine Toll
 	dt = {
@@ -961,12 +1030,34 @@ local actions = {
 		info = "Divine Toll (Kyrian)",
 	},
 
+	--Divine Toll w/ final reckoning off cd
+	dt_fr = {
+		id = idToll,
+		GetCD = function()
+		UiMapID = C_Map.GetBestMapForUnit("player")
+			if (s1 ~= idToll) and ((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (not(IsSpellKnown(idExecutionSentence))) and (GetCooldown(idFinal) < 1) then
+				return GetCooldown(idToll)
+			end
+			return 100 -- lazy stuff
+		end,
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			s_debuff_Judgement = 8
+				if (s_buff_ha > 0) then
+					s_hp = min(3, s_hp + 2)
+				else
+					s_hp = min(3, s_hp + 1)
+				end
+		end,
+		info = "Divine Toll (Kyrian) w/ Final Reckoning (Talent) ready",
+	},
+
 	--Divine Toll w/es w/fr50
 	dt_es = {
 		id = idToll,
 		GetCD = function()
 		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s1 ~= idToll) and ((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (s_debuff_Exec > 1) then
+			if (s1 ~= idToll) and ((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (s_debuff_Exec > 2) then
 				return GetCooldown(idToll)
 			end
 			return 100 -- lazy stuff
@@ -980,7 +1071,7 @@ local actions = {
 					s_hp = min(3, s_hp + 1)
 				end
 		end,
-		info = "Divine Toll (Kyrian) w/ Esecution Sentence up",
+		info = "Divine Toll (Kyrian) w/ Execution Sentence up",
 		reqTalent = 23467,
 	},
 
@@ -1143,6 +1234,10 @@ local function GetStatus()
 	local cd, charges = GetHoWData()
 	s_HoWCharges = charges
 
+	-- vanq hamma stacks
+	local cd, charges = GetVHData()
+	s_VanquishersHammerCharges = charges
+
 	-- client hp and haste
 	s_hp = UnitPower("player", 9)
 	s_haste = 1 + UnitSpellHaste("player") / 100
@@ -1272,8 +1367,14 @@ function xmod.Rotation()
 		s_HoWCharges = s_HoWCharges - 1
 
 	end
-	--
 
+	-- VanquishersHammer Charges
+	local cd, charges = GetVHData()
+	s_VHCharges = charges
+	if (s1 == idVanq) then
+		s_VHCharges = s_VHCharges - 1
+
+	end
 
 	if debug and debug.enabled then
 		debug:AddBoth("csc", s_CrusaderStrikeCharges)
