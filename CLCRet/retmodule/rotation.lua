@@ -1,6 +1,4 @@
 
--- truk specials = tvx, ashx, es esj esfr boss only. s s5 boss only
-
 -- Thanks to Shibou for the API Wrapper code
 
 -- Pulls back the Addon-Local Variables and store them locally.
@@ -360,6 +358,25 @@ local actions = {
 		info = "Wake Of Ashes",
 	},
 
+	--Wake of Ashes
+	woa_4p = {
+		id = idWakeOfAshes,
+		GetCD = function()
+			if ((s1 ~= idWakeOfAshes) and (s_buff_aow > 1)) and (IsSpellKnown(255937)) then
+				return GetCooldown(idWakeOfAshes)
+			end
+			return 100
+		end,
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+				if (s_buff_ha > 0) then
+					s_hp = max(5, s_hp + 5)
+				else
+					s_hp = min(3, s_hp + 3)
+				end
+		end,
+		info = "Wake Of Ashes w/ Art of War (Tier Set 4 Piece)",
+	},
 
 	--Wake of Ashes
 	w1m= {
