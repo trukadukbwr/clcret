@@ -1,4 +1,4 @@
-## Interface: 90105
+## Interface: 90200
 ## Title: CLCRet Options
 ## Notes: A LoD option menu for CLCRet
 ## Author: Calcute
