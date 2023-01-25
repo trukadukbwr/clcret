@@ -53,24 +53,7 @@ function xmod.BuildOptions()
 									},
 								},
 							},
-							--[[
-							zealPrio = {
-								order = 3, type="group", inline = true, name = "Zealotry priority",
-								args = {
-									usePrioZeal = {
-										order = 1, type = "toggle", width = "full", name = "Enable zealotry priority",
-										get = Get, set = Set,
-									},
-									prioZeal = {
-										order = 2, type = "input", width = "full", name = "",
-										get = Get, set = Set,
-									},
-									infoCMD = {
-										order = 3, type = "description", name = "Sample command line usage: /clcinfo retpriozeal inqa tv cs exoud how exo",
-									},
-								},
-							},
-							--]]
+							
 							disclaimer = {
 								order = 4, type = "description", name = "|cffff0000These are just examples, make sure you adjust them properly!|cffffffff",
 							},
@@ -89,32 +72,37 @@ function xmod.BuildOptions()
 							},
 						},
 					},
---					clashes = {
---						order = 3, type = "group", inline = true, name = "Clashes",
---						args = {
---							howclash = {
---								order = 1, type = "range", min = 0, max = 2, step = 0.01, name = "Hammer of Wrath",
---								get = Get, set = Set,
---							},
---							csclash = {
---								order = 2, type = "range", min = 0, max = 2, step = 0.01, name = "Crusader Strike",
---								get = Get, set = Set,
---							},
---							exoclash = {
---								order = 3, type = "range", min = 0, max = 2, step = 0.01, name = "Exorcism",
---								get = Get, set = Set,
---							},
---						},
---					},
---					extra = {
---						order = 3, type = "group", inline = true, name = "Extra",
---						args = {
---							ssduration = {
---								order = 1, type = "range", min = 0, max = 30, step = 1, name = "Time left on SS before suggesting refresh",
---								get = Get, set = Set,
---							},
---						},
---					},
+-- ------------------------------------------
+					
+					clashes = {
+						order = 3, type = "group", inline = true, name = "Clashes",
+						args = {
+
+
+							howclash = {
+								order = 1, type = "range", min = 0, max = 2, step = 0.01, name = "Hammer of Wrath",
+								get = Get, set = Set,
+							},
+
+
+							csclash = {
+								order = 2, type = "range", min = 0, max = 2, step = 0.01, name = "Crusader Strike",
+								get = Get, set = Set,
+							},
+
+
+							exoclash = {
+								order = 3, type = "range", min = 0, max = 2, step = 0.01, name = "Exorcism",
+								get = Get, set = Set,
+							},
+
+
+						},
+					},
+
+
+-- -------------------------------
+
 				},
 			},
 		},

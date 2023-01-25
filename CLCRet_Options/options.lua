@@ -4,7 +4,6 @@ if trueclass ~= "PALADIN" then return end
 clcret.optionsLoaded = true
 
 local MAX_AURAS = 20
---local MAX_SOVBARS = 5
 
 local db = clcret.db.profile
 local root
@@ -302,7 +301,6 @@ local options = {
 						db.zoomIcons = val
 						clcret:UpdateSkillButtonsLayout()
 						clcret:UpdateAuraButtonsLayout()
---						clcret:UpdateSovBarsLayout()
 					end,
 				},
 				noBorder = {
@@ -314,7 +312,6 @@ local options = {
 						db.noBorder = val
 						clcret:UpdateSkillButtonsLayout()
 						clcret:UpdateAuraButtonsLayout()
---						clcret:UpdateSovBarsLayout()
 					end,
 				},
 				borderColor = {
@@ -327,7 +324,6 @@ local options = {
 						db.borderColor = {r, g, b, a}
 						clcret:UpdateSkillButtonsLayout()
 						clcret:UpdateAuraButtonsLayout()
---						clcret:UpdateSovBarsLayout()
 					end,
 				},
 				borderType = {
@@ -339,7 +335,6 @@ local options = {
 						db.borderType = val
 						clcret:UpdateSkillButtonsLayout()
 						clcret:UpdateAuraButtonsLayout()
---						clcret:UpdateSovBarsLayout()
 					end,
 					values = { "Light", "Medium", "Heavy" }
 				},
@@ -522,205 +517,6 @@ local options = {
 			args = {},
 		},
 		
-		
-		-- sov tracking
---		sov = {
---			order = 40,
---			name = "SoV/SoCorr Tracking",
---			type = "group",
---			args = {
---				____info = {
---					order = 1,
---					type = "description",
---					name = "This module provides bars or icons to watch the cooldown of your Seal of Vengeance/Corruption debuff on different targets.\nIt tracks combat log events so disable it unless you really need it.\nTargets are tracked by their GUID from combat log events.",
---				},
---				enabled = {
---					order = 2,
---					type = "toggle",
---					name = "Enable",
---					get = function(info) return db.sov.enabled end,
---					set = function(info, val) clcret:ToggleSovTracking() end,
---				},
---				updatesPerSecond = {
---					order = 3,
---					type = "range",
---					name = "Updates per second",
---					min = 1,
---					max = 100,
---					step = 1,
---					get = function(info) return db.sov.updatesPerSecond end,
---					set = function(info, val)
---						db.sov.updatesPerSecond = val
---						clcret.scanFrequencySov = 1 / val
---					end,
---				},
---				__display = {
---					order = 10,
---					type = "header",
---					name = "Appearance"
---				},
---				useButtons = {
---					order = 11,
---					width = "full",
---					type = "toggle",
---					name = "Icons instead of bars",
---					get = function(info) return db.sov.useButtons end,
---					set = function(invo, val)
---						db.sov.useButtons = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				____alpha = {
---					order = 20,
---					type = "description",
---					name = "You can control if the bar/icon of your current target looks different than the other ones.\nFor bars it uses both alpha and color values while the icons only change their alpha.",
---				},
---				targetDifference = {
---					order = 21,
---					width = "full",
---					type = "toggle",
---					name = "Different color for target",
---					get = function(info) return db.sov.targetDifference end,
---					set = function(info, val)
---						db.sov.targetDifference = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				color = {
---					order = 22,
---					type = "color",
---					name = "Target color/alpha",
---					hasAlpha = true,
---					get = function(info) return unpack(db.sov.color) end,
---					set = function(info, r, g, b, a)
---						db.sov.color = {r, g, b, a}
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				colorNonTarget = {
---					order = 23,
---					type = "color",
---					name = "Non target color/alpha",
---					hasAlpha = true,
---					get = function(info) return unpack(db.sov.colorNonTarget) end,
---					set = function(info, r, g, b, a)
---						db.sov.colorNonTarget = {r, g, b, a}
---					end,
---				},
---				__layout = {
---					order = 40,
---					type = "header",
---					name = "Layout",
---				},
---				showAnchor = {
---					order = 50,
---					width = "full",
---					type = "toggle",
---					name = "Show anchor (not movable)",
---					get = function(info) return clcret.showSovAnchor end,
---					set = function(invo, val) clcret:ToggleSovAnchor() end,
---				},
---				growth = {
---					order = 60,
---					type = "select",
---					name = "Growth direction",
---					get = function(info) return db.sov.growth end,
---					set = function(info, val)
---						db.sov.growth = val
---						clcret:UpdateSovBarsLayout()
---					end,
---					values = { up = "Up", down = "Down", left = "Left", right = "Right" }
---				},
---				spacing = {
---					order = 70,
---					type = "range",
---					name = "Spacing",
---					min = 0,
---					max = 100,
---					step = 1,
---					get = function(info) return db.sov.spacing end,
---					set = function(info, val)
---						db.sov.spacing = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---
---				anchor = {
---					order = 80,
---					type = "select",
---					name = "Anchor",
---					get = function(info) return db.sov.point end,
---					set = function(info, val)
---						db.sov.point = val
---						clcret:UpdateSovBarsLayout()
---					end,
---					values = anchorPoints,
---				},
---				anchorTo = {
---					order = 81,
---					type = "select",
---					name = "Anchor To",
---					get = function(info) return db.sov.pointParent end,
---					set = function(info, val)
---						db.sov.pointParent = val
---						clcret:UpdateSovBarsLayout()
---					end,
---					values = anchorPoints,
---				},
---				x = {
---					order = 82,
---					type = "range",
---					name = "X",
---					min = -1000,
---					max = 1000,
---					step = 1,
---					get = function(info) return db.sov.x end,
---					set = function(info, val)
---						db.sov.x = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				y = {
---					order = 83,
---					type = "range",
---					name = "Y",
---					min = -1000,
---					max = 1000,
---					step = 1,
---					get = function(info) return db.sov.y end,
---					set = function(info, val)
---						db.sov.y = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				width = {
---					order = 90,
---					type = "range",
---					name = "Width",
---					min = 1,
---					max = 1000,
---					step = 1,
---					get = function(info) return db.sov.width end,
---					set = function(info, val)
---						db.sov.width = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---				height = {
---					order = 91,
---					type = "range",
---					name = "Height (Size for Icons)",
---					min = 1,
---					max = 500,
---					step = 1,
---					get = function(info) return db.sov.height end,
---					set = function(info, val)
---						db.sov.height = val
---						clcret:UpdateSovBarsLayout()
---					end,
---				},
---			},
---		},
 	},
 }
 
@@ -928,14 +724,14 @@ for i = 1, MAX_AURAS do
 end
 
 -- remove the first one we added
-for i = 1, #INTERFACEOPTIONS_ADDONCATEGORIES do
-	if 	INTERFACEOPTIONS_ADDONCATEGORIES[i]
-	and INTERFACEOPTIONS_ADDONCATEGORIES[i].name
-	and INTERFACEOPTIONS_ADDONCATEGORIES[i].name == "CLCRet"
-	then
-		table.remove(INTERFACEOPTIONS_ADDONCATEGORIES, i)
-	end
-end
+-- for i = 1, #INTERFACEOPTIONS_ADDONCATEGORIES do
+	-- if 	INTERFACEOPTIONS_ADDONCATEGORIES[i]
+	-- and INTERFACEOPTIONS_ADDONCATEGORIES[i].name
+	-- and INTERFACEOPTIONS_ADDONCATEGORIES[i].name == "CLCRet"
+	-- then
+		-- table.remove(INTERFACEOPTIONS_ADDONCATEGORIES, i)
+	-- end
+-- end
 
 local AceConfig = LibStub("AceConfig-3.0")
 AceConfig:RegisterOptionsTable("CLCRet", options)
@@ -947,7 +743,6 @@ AceConfigDialog:AddToBlizOptions("CLCRet", "Rotation", "CLCRet", "rotation")
 AceConfigDialog:AddToBlizOptions("CLCRet", "Behavior", "CLCRet", "behavior")
 AceConfigDialog:AddToBlizOptions("CLCRet", "Aura Buttons", "CLCRet", "auras")
 AceConfigDialog:AddToBlizOptions("CLCRet", "Layout", "CLCRet", "layout")
---AceConfigDialog:AddToBlizOptions("CLCRet", "SoV Tracking", "CLCRet", "sov")
 
 -- profiles
 options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(clcret.db)

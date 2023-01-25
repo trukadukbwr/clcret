@@ -1,6 +1,3 @@
-
--- Thanks to Shibou for the API Wrapper code
-
 -- Pulls back the Addon-Local Variables and store them locally.
 local addonName, addonTable = ...;
 local addon = _G[addonName];
@@ -64,7 +61,6 @@ local Prototype = {
 		end
 	end,
 
-
 };
 
 local MT = {
@@ -113,7 +109,7 @@ if clcInfo then debug = clcInfo.debug end
 xmod.version = 9000001
 xmod.defaults = {
 	version = xmod.version,
-	prio = "s5 tv5 dt_es woa tv_fr s fr es_fr tvv tvdp tvj tv dt how_aw ds how vh boj_aow j cs2 boj cons cs arc",
+	prio = "s5 tv5 fr how_aw tv woa ds s tvdp exo cons boj_aow j dt how boj cs2 cs",
 	rangePerSkill = false,
 	howclash = 0, -- priority time for hammer of wrath
 	csclash = 0, -- priority time for cs
@@ -145,53 +141,49 @@ local idWord = 85673
 local idFinal = 343721
 local idHolyAvenger = 105809
 local idJusticarsVengeance = 215661
-
+local idExorcism = 383185
+local idRadiantDecree = 383469
 
 -- ------------------------
 -- ---Covenant Abilities---
 -- ------------------------
-
-local idVanq = 328204
-local idToll = 304971
-local idAsh = 316958
-local idSummer = 328620
-local idAutumn = 328622
-local idWinter = 328281
-local idSpring = 328282
+local idToll = 375576
+local idTollOld = 304971
 
 -- ------
--- buffs
+-- buffs. Removed Lights Champion Buff (tier 1 DF set buff)
 -- ------
--- ds = Az trait, ds2 = talent, crusader strike variant
 local ln_buff_RighteousVerdict = GetSpellInfo(267611)
 local ln_buff_TheFiresOfJustice = GetSpellInfo(209785)
 local ln_buff_DivinePurpose = GetSpellInfo(223819)
 local ln_buff_aow = GetSpellInfo(281178)
-local ln_buff_rv = GetSpellInfo(267611)
-local ln_buff_ds = GetSpellInfo(286393)
 local ln_buff_ds2 = GetSpellInfo(326733)
 local ln_buff_aw = GetSpellInfo(31884)
+local ln_buff_Crusade = GetSpellInfo(231895)
 local ln_buff_ha = GetSpellInfo(105809)
-local ln_buff_Vanq = GetSpellInfo(328204)
-local ln_buff_MagJ = GetSpellInfo(337682)
-local ln_buff_FinalVerdict = GetSpellInfo(337228)
+local ln_buff_FinalVerdict = GetSpellInfo(383329)
 local ln_buff_Seraphim = GetSpellInfo(152262)
+local ln_buff_SealedVerdict = GetSpellInfo(387643)
+local ln_buff_Dawn = GetSpellInfo(385127)
+local ln_buff_Dusk = GetSpellInfo(385126)
+local ln_buff_Woa = GetSpellInfo(267344)
+local ln_buff_CrusadersStrength = GetSpellInfo(394673)
+local ln_buff_ds = GetSpellInfo(387178)
 
 -- debuffs
 local ln_debuff_Judgement = GetSpellInfo(197277)
 local ln_debuff_Exec = GetSpellInfo(343527)
 local ln_debuff_FinalReckoning50 = GetSpellInfo(343721)
 local ln_debuff_FinalReckoning10 = GetSpellInfo(343724)
+local ln_debuff_Sanctify = GetSpellInfo(382538)
 
 -- status vars
 local s1, s2
 local s_ctime, s_otime, s_gcd, s_hp, s_dp, s_aw, s_ss, s_dc, s_fv, s_bc, s_haste, s_in_execute_range
 local s_CrusaderStrikeCharges = 0
 local s_HoWCharges = 0
-local s_VanquishersHammerCharges = 0
-local s_CrucibleCharges = 0
-local s_buff_DivinePurpose, s_buff_TheFiresOfJustice, s_buff_rv, s_buff_ds, s_buff_ds2, s_buff_aw, s_buff_ha, s_buff_vanq, s_buff_MagJ, s_buff_FinalVerdict, s_buff_RighteousVerdict, s_buff_Seraphim
-local s_debuff_Judgement, s_debuff_Exec, s_debuff_FinalReckoning50, s_debuff_FinalReckoning10
+local s_buff_DivinePurpose, s_buff_TheFiresOfJustice, s_buff_ds2, s_buff_aw, s_buff_ha, s_buff_FinalVerdict, s_buff_RighteousVerdict, s_buff_Seraphim, s_buff_SealedVerdict, s_buff_Dawn, s_buff_Dusk, s_buff_Woa, s_buff_CrusadersStrength, s_buff_ds, s_buff_Crusade
+local s_debuff_Judgement, s_debuff_Exec, s_debuff_FinalReckoning50, s_debuff_FinalReckoning10, s_debuff_Sanctify
 
 local talent_DivinePurpose = false
 
@@ -247,53 +239,24 @@ local function GetHoWData()
 end
 
 
-local function GetVHData()
-	local charges, maxCharges, start, duration = GetSpellCharges(idVanq)
-	if (charges >= 2) then
-		return 0, 2
-	end
-
-	if start == nil then
-		return 100, charges
-	end
-	local cd = start + duration - s_ctime - s_gcd
-	if cd < 0 then
-		return 0, min(2, charges + 1)
-	end
-
-	return cd, charges
-end
-
 -- -------------------
 -- /dump GetTalentInfo(row, column, 1)
 -- s_hp = min(3, s_hp + 2) is telling the addon what hp you need to reach for tv
 -- /dump UnitBuff("Player", 1)
 -- /dump UnitDebuff("Target", 1)
+-- IsSpellKnown(155145)
 -- -------------------
--- code to check buff count, chains of ice from clcinfo frost dk used as example
-		-- chains of ice w/ coldheart @ 20 stacks
---	ch = {
---			id = idChainsOfIce,
+-- code to check buff count (cons 2 set bonus as example)
+--	cons_2p = {
+--		id = idConsecration,
 --		GetCD = function()
---		name, icon, count, debuffType, duration, expirationTime, source, isStealable, 
---  nameplateShowPersonal, spellId, canApplyAura, isBossDebuff, castByPlayer, nameplateShowAll, timeMod
---= GetPlayerAuraBySpellID(281209)
+--		
+--			name, _, count, _, duration, _, _, _, _, spellId, _, _, _, _, _ = APIWrapper.UnitBuff  ("player", ln_buff_CrusadersStrength)
+--		
+--			if (s1 ~= idConsecration) and (count == 2) and (IsSpellKnown(26573)) and (s_buff_CrusadersStrength > 1) then
+--				return GetCooldown(idConsecration)
 --
---			if (s1 ~= idChainsOfIce) and (count == 20) then
---				return GetCooldown(idChainsOfIce)
---			end
---			return 100
---		end,
---		UpdateStatus = function()
---			s_ctime = s_ctime + s_gcd + 1.5
---
---		end,
---		info = "Chains of Ice w/ Cold Heart @ 20 Stacks",
---	},
---
----------------------------------------------------------------------------------
-
-local UiMapID = C_Map.GetBestMapForUnit("player")
+-- -------------------------------------------------------------------------------
 
 -- actions ---------------------------------------------------------------------
 local actions = {
@@ -334,23 +297,70 @@ local actions = {
 		info = "Consecration",
 	},
 
+	--Consecration DF 2set before they changed it on beta. Keep in code in case they bring back ability.
+	-- cons_2p = {
+		-- id = idConsecration,
+		-- GetCD = function()
+		
+			-- name, _, count, _, duration, _, _, _, _, spellId, _, _, _, _, _ = APIWrapper.UnitBuff  ("player", ln_buff_CrusadersStrength)
+		
+			-- if (s1 ~= idConsecration) and (count == 2) and (IsSpellKnown(26573)) and (s_buff_CrusadersStrength > 1) then
+				-- return GetCooldown(idConsecration)
+			-- end
+			-- return 100
+		-- end,
+		-- UpdateStatus = function()
+			-- s_ctime = s_ctime + s_gcd + 1.5 / s_haste
+
+		-- end,
+		-- info = "Consecration w/ 2 Stacks of Crusader's Strength (2 Set)",
+	-- },
+
+	--exorcism dont worry about dot, exo cd longer then dot
+	exo = {
+		id = idExorcism,
+		GetCD = function()
+			if (s1 ~= idExorcism) and (IsSpellKnown(383185)) and (not(IsUsableSpell(idTemplarsVerdict))) then
+				return GetCooldown(idExorcism)
+			end
+			return 100
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
+
+		end,
+		info = "Exorcism",
+	},
+
+
 	-- ----------------------------------
 	-- Holy Power Generators
 	-- ----------------------------------
+	
+	-- Wake of Ashes
+	-- IsSpellKnownOrOverridesKnown(255937) will check for Wake of Ashes or any spell that replaces it.
 
-	--Wake of Ashes
+	-- For Radiant Decree Talent;
+	-- IsSpellKnownOrOverridesKnown(383469) is to check if radiant decree is talented
+	-- IsUsableSpell(383469) wont return true unless theres holy power, use this to check for enough holy power for RD
+	-- IsPlayerSpell(384052) will check if the player knows the talent. 383469 will not return true, even if they know the talent
 	woa = {
 		id = idWakeOfAshes,
 		GetCD = function()
-			if ((s1 ~= idWakeOfAshes) and (s_hp <= 1)) and (IsSpellKnown(255937)) then
-				return GetCooldown(idWakeOfAshes)
+			costs = GetSpellPowerCost(255937)
+			if (s1 ~= idWakeOfAshes) and IsSpellKnownOrOverridesKnown(255937) and ((s_hp <= 1) and (IsUsableSpell(255937))) or ((IsUsableSpell(383469) and IsPlayerSpell(384052)) and (GetCooldown(idRadiantDecree) < 1) and (((s_hp > 2) or (s_buff_DivinePurpose > 1)) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)))) then
+				if IsSpellKnownOrOverridesKnown(383469) then
+					return GetCooldown(idRadiantDecree)
+				else
+					return GetCooldown(idWakeOfAshes)
+				end	
 			end
 			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-				if (s_buff_ha > 0) then
-					s_hp = max(5, s_hp + 5)
+				if IsSpellKnownOrOverridesKnown(383469) then
+					s_hp = max(3, s_hp - 3)
 				else
 					s_hp = min(3, s_hp + 3)
 				end
@@ -358,25 +368,41 @@ local actions = {
 		info = "Wake Of Ashes",
 	},
 
-	--Wake of Ashes
-	woa_4p = {
-		id = idWakeOfAshes,
+	--Radiant decree
+	rd = {
+		id = idRadiantDecree,
 		GetCD = function()
-			if ((s1 ~= idWakeOfAshes) and (s_buff_aow > 1)) and (IsSpellKnown(255937)) then
-				return GetCooldown(idWakeOfAshes)
+			if (IsUsableSpell(383469) and IsPlayerSpell(384052) and IsSpellKnownOrOverridesKnown(383469)) and ((((s_debuff_Sanctify < 1) and IsPlayerSpell(382536) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(382536)) or (not(IsPlayerSpell(382536))))) and (IsSpellKnown(385125) and (((s_buff_Dawn < 2) and (s_hp > 4)) or ((s_buff_Dawn > 1) and (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) or ((not(IsSpellKnown(385125))) and ((s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) then
+				return GetCooldown(idRadiantDecree)
 			end
 			return 100
 		end,
-			UpdateStatus = function()
+		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-				if (s_buff_ha > 0) then
-					s_hp = max(5, s_hp + 5)
-				else
-					s_hp = min(3, s_hp + 3)
-				end
+				s_hp = max(3, s_hp - 3)
 		end,
-		info = "Wake Of Ashes w/ Art of War (Tier Set 4 Piece)",
+		info = "Radiant Decree (Talent)",
 	},
+
+	--Wake of Ashes
+	-- woa_4p = {
+		-- id = idWakeOfAshes,
+		-- GetCD = function()
+			-- if ((s1 ~= idWakeOfAshes) and (s_buff_Woa > 0)) and (IsSpellKnown(255937)) then
+				-- return GetCooldown(idWakeOfAshes)
+			-- end
+			-- return 100
+		-- end,
+			-- UpdateStatus = function()
+			-- s_ctime = s_ctime + s_gcd + 1.5
+				-- if (s_buff_ha > 0) then
+					-- s_hp = max(5, s_hp + 5)
+				-- else
+					-- s_hp = min(3, s_hp + 3)
+				-- end
+		-- end,
+		-- info = "Wake Of Ashes w/ Art of War (Ashes to Dust Talent)",
+	-- },
 
 	--Wake of Ashes
 	w1m= {
@@ -395,7 +421,7 @@ local actions = {
 					s_hp = min(3, s_hp + 3)
 				end
 		end,
-		info = "Wake Of Ashes as a 1 min cd for Kyrian",
+		info = "Wake Of Ashes for 1 min build",
 	},
 
 	--Judgment
@@ -439,6 +465,7 @@ local actions = {
 		end,
 		info = "Crusader Strike stacks = 2",
 	},
+	
 	--Crusader Strike
 	cs = {
 		id = idCrusaderStrike,
@@ -487,7 +514,7 @@ local actions = {
 	how_aw = {
 		id = idHoW,
 		GetCD = function()
-			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and (s_buff_aw > 0) and (IsSpellKnown(24275)) then
+			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and (((s_buff_aw > 1) or (s_buff_Crusade > 1)) or (s_buff_FinalVerdict > 1)) and (IsSpellKnown(24275)) then
 				return GetCooldown(idHoW)
 			end
 			return 100
@@ -503,31 +530,12 @@ local actions = {
 		info = "Hammer of Wrath during Avenging Wrath",
 	},
 
-	--Hammer of Wrath w/ Final Verdict Legendary
-	how_lego = {
-		id = idHoW,
-		GetCD = function()
-			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and (s_buff_FinalVerdict > 0) then
-				return GetCooldown(idHoW)
-			end
-			return 100
-		end,
-			UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-				if (s_buff_ha > 0) then
-					s_hp = min(3, s_hp + 3)
-				else
-					s_hp = min(3, s_hp + 1)
-				end
-		end,
-		info = "Hammer of Wrath with Final Verdict Proc (Legendary Power)",
-	},
-
 	--Blade of Justice
 	boj = {
 		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and (IsSpellKnown(184575)) and (not(IsUsableSpell(idTemplarsVerdict))) then
+			-- check if dawn buff is about to expire so we can build to 5 hp if needed
+			if (s1 ~= idBladeOfJustice) and (IsSpellKnown(184575)) and (((IsSpellKnown(385125) and (s_buff_Dawn < 1) and (s_hp < 5) and (not(IsUsableSpell(idTemplarsVerdict)))) or (IsSpellKnown(385125) and (s_buff_Dawn > 1) and (s_hp < 2) and (not(IsUsableSpell(idTemplarsVerdict))))) or ((not(IsSpellKnown(385125))) and (s_hp <= 3) and (not(IsUsableSpell(idTemplarsVerdict))))) then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
@@ -542,11 +550,13 @@ local actions = {
 		end,
 		info = "Blade of Justice",
 	},
+
 	--Blade of Justice w/ Art of War proc
 	boj_aow = {
 		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and (s_buff_aow > 2) and (not(IsUsableSpell(idTemplarsVerdict))) then
+				-- check if dawn buff is about to expire so we can build to 5 hp if needed
+			if (s1 ~= idBladeOfJustice) and (IsSpellKnown(184575)) and ((s_buff_aow > 2) or (s_buff_SealedVerdict > 1)) and (((IsSpellKnown(385125) and (s_buff_Dawn < 1) and (s_hp < 5) and (not(IsUsableSpell(idTemplarsVerdict)))) or (IsSpellKnown(385125) and (s_buff_Dawn > 1) and (s_hp < 2) and (not(IsUsableSpell(idTemplarsVerdict))))) or ((not(IsSpellKnown(385125))) and (s_hp <= 3) and (not(IsUsableSpell(idTemplarsVerdict))))) then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
@@ -559,9 +569,35 @@ local actions = {
 				s_hp = min(3, s_hp + 2)
 			end
 		end,
-		info = "Blade of Justice w/ Art of War Proc",
+		info = "Blade of Justice w/ Art of War OR Sealed Verdict Proc",
 	},
 
+	-- ----------------------------------
+    -- Boj with vault 4 set bonus
+    -- ----------------------------------
+ 
+ 	-- Blade of Justice vault 4 set buff
+	-- boj_4p = {
+		-- id = idBladeOfJustice,
+		-- GetCD = function()
+			-- check if dawn buff is about to expire so we can build to 5 hp if needed
+			-- if (s1 ~= idBladeOfJustice) and (s_buff_LightChampion > 0) and (IsSpellKnown(184575)) and (((IsSpellKnown(385125) and (s_buff_Dawn < 1) and (s_hp < 5) and (not(IsUsableSpell(idTemplarsVerdict)))) or (IsSpellKnown(385125) and (s_buff_Dawn > 1) and (s_hp < 2) and (not(IsUsableSpell(idTemplarsVerdict))))) or ((not(IsSpellKnown(385125))) and (s_hp <= 3) and (not(IsUsableSpell(idTemplarsVerdict))))) then
+				-- return GetCooldown(idBladeOfJustice)
+			-- end
+			-- return 100
+		-- end,
+		-- UpdateStatus = function()
+			-- s_ctime = s_ctime + s_gcd + 1.5
+			-- if (s_buff_ha > 0) then
+				-- s_hp = min(3, s_hp + 4)
+			-- else
+				-- s_hp = min(3, s_hp + 2)
+			-- end
+		-- end,
+		-- info = "Blade of Justice w/ Light's Champion (4 set) Buff",
+	-- },
+
+ 
 	-- ----------------------------------
 	-- Holy Power Consumers
 	-- ----------------------------------
@@ -582,15 +618,11 @@ local actions = {
 		info = "Divine Storm w/ Empyrean Power Proc",
 	},
 
-	-- ----------------------------------
-	-- Templar's Verdict
-	-- ----------------------------------
-
-	--Templar's Verdict dynamic no j
-	tv = {
-		id = idTemplarsVerdict,
+	--Divine Storm no sanctify buff (used to apply sanctify talent buff)
+	ds_s = {
+		id = idDivineStorm,
 		GetCD = function()
-			if ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0) or ((s_hp > 0) and (s_buff_TheFiresOfJustice > 0) and (s_buff_MagJ > 0))) then
+			if ((s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)) and (not(s_debuff_Sanctify > 1)) and (IsPlayerSpell(382536)) and (s_buff_ds < 1) then
 				return 0
 			end
 			return 100
@@ -599,30 +631,35 @@ local actions = {
 			s_ctime = s_ctime + s_gcd + 1.5
 				s_hp = max(3, s_hp - 3)
 		end,
-		info = "Smart Templar's Verdict (Will detect buffs and Holy Power Costs)",
+		info = "Divine Storm to apply Sanctify debuff",
 	},
 
-	--Templar's Verdict dynamic FR
---	tv_fr = {
---		id = idTemplarsVerdict,
---		GetCD = function()
---			if (s_debuff_FinalReckoning50 > 1) and ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) --or (s_buff_DivinePurpose > 0) or ((s_hp > 0) and (s_buff_TheFiresOfJustice > 0) and (s_buff_MagJ > 0))) and (GetCooldown(idExecutionSentence) > 1 ) then
---				return 0
---			end
---			return 100
---		end,
---		UpdateStatus = function()
---			s_ctime = s_ctime + s_gcd + 1.5
---				s_hp = max(3, s_hp - 3)
---		end,
---		info = "Smart Templar's Verdict w/ Final Recknong (50%) debuff",
---	},
 
-	--Templar's Verdict dynamic 5 HoPo
+	-- ----------------------------------
+	-- Templar's Verdict
+	-- ----------------------------------
+
+	--Templar's Verdict dynamic no j, Will detect Dusk and Dawn, Smart Templar's Verdict (Will detect buffs and Holy Power Costs), Removed Smart description to reduce confusion for DF launch
+	tv = {
+		id = idTemplarsVerdict,
+		GetCD = function()
+			if (((s_debuff_Sanctify < 1) and IsPlayerSpell(382536) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(382536)) or (not(IsPlayerSpell(382536))))) and ((IsSpellKnown(385125)) and (((s_buff_Dawn < 2) and (s_hp > 4)) or ((s_buff_Dawn > 1) and (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) or ((not(IsSpellKnown(385125))) and ((s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0))) then
+				return 0
+			end
+			return 100
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+				s_hp = max(3, s_hp - 3)
+		end,
+		info = "Templar's Verdict. Will Detect Dusk n Dawn Talents.",
+	},
+
+	--Templar's Verdict dynamic 5 HoPo, cast at 5 no matter what, dont need smart string
 	tv5 = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			if (s_hp >= 5) then
+			if (s_hp > 4) then
 				return 0
 			end
 			return 100
@@ -636,55 +673,22 @@ local actions = {
 
 -- ---
 	--jv
-	jv = {
-		id = idJusticarsVengeance,
-		GetCD = function()
-			if ((s_hp >= 5) or ((s_hp >= 4) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 4) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0) or ((s_hp > 3) and (s_buff_TheFiresOfJustice > 0) and (s_buff_MagJ > 0))) then
-				return 0
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-				s_hp = max(5, s_hp - 5)
-		end,
-		info = "Justicars Vengeance",
-	},
+--	jv = {
+--		id = idJusticarsVengeance,
+--		GetCD = function()
+--			if (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0) then
+--				return 0
+--			end
+--			return 100
+--		end,
+--		UpdateStatus = function()
+--			s_ctime = s_ctime + s_gcd + 1.5
+--				s_hp = max(5, s_hp - 3)
+--		end,
+--		info = "Justicars Vengeance",
+--	},
 
 -- ------
-
-	--Templar's Verdict w/ j
-	tvj = {
-		id = idTemplarsVerdict,
-		GetCD = function()
-			if (s_debuff_Judgement > 1) and ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0) or ((s_hp > 0) and (s_buff_TheFiresOfJustice > 0) and (s_buff_MagJ > 0))) then
-				return 0
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-				s_hp = max(3, s_hp - 3)
-		end,
-		info = "Smart Templar's Verdict w/ Judgment Debuff",
-	},
-
-		--Templar's Verdict Vanq Hammer
-	tvv = {
-		id = idTemplarsVerdict,
-		GetCD = function()
-			if (s_buff_Vanq > 0) and ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0) or ((s_hp > 0) and (s_buff_TheFiresOfJustice > 0) and (s_buff_MagJ > 0))) then
-				return 0
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-				s_hp = max(3, s_hp - 3)
-		end,
-		info = "Templar's Verdict With Vanquisher's Hammer Buff (Necrolord)",
-	},
-
 
 	-- ----------------------------------
 	-- Talents (Execution Sentence, etc)
@@ -694,7 +698,7 @@ local actions = {
 	fr = {
 		id = idFinal,
 		GetCD = function()
-			if (s1 ~= idFinal) and (s_hp > 2) and (((IsSpellKnown(343527)) and (GetCooldown(idExecutionSentence) < 5)) or ((not(IsSpellKnown(343527))) and (GetCooldown(idFinal) < 5))) then
+			if (s1 ~= idFinal) and IsSpellKnown(343721) and (s_hp > 2) and (((IsSpellKnown(343527)) and (GetCooldown(idExecutionSentence) < 5)) or ((not(IsSpellKnown(343527))) and (GetCooldown(idFinal) < 5))) then
 				return GetCooldown(idFinal)
 			end
 			return 100
@@ -704,16 +708,13 @@ local actions = {
 
 		end,
 		info = "Final Reckoning",
-		reqTalent = 22634,
 	},
 
-	--Execution Sentence w/ J up
+	--Execution Sentence 
 	es = {
 		id = idExecutionSentence,
 		GetCD = function()
-		-- level = UnitLevel("target")
-		-- ((level < 0) or (level > 61))
-			if ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_hp >= 2 and s_buff_DivinePurpose > 0)) and (((talentID == 17601) and (s_buff_Seraphim > 1)) or (not(talentID == 22634))) then
+			if ((IsSpellKnown(385125)) and (((s_buff_Dawn < 2) and (s_hp > 4)) or ((s_buff_Dawn > 1) and (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) or ((not(IsSpellKnown(385125))) and ((s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0))) and (IsUsableSpell(idExecutionSentence) and (IsSpellKnown(343527))) then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
@@ -724,9 +725,24 @@ local actions = {
 
 		end,
 		info = "Execution Sentence",
-		reqTalent = 23467,
 	},
 
+	--Execution Sentence 5 hopo
+	es5 = {
+		id = idExecutionSentence,
+		GetCD = function()
+			if (s_hp > 4) and IsUsableSpell(idExecutionSentence) and (IsSpellKnown(343527)) then
+				return GetCooldown(idExecutionSentence)
+			end
+			return 100
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			s_hp = min(3, s_hp - 3)
+
+		end,
+		info = "Execution Sentence",
+	},
 
 	--Holy Avenger
 	ha = {
@@ -742,7 +758,6 @@ local actions = {
 			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
 		end,
 		info = "Holy Avenger",
-		reqTalent = 17599,
 		},
 
 
@@ -754,7 +769,7 @@ local actions = {
 	s = {
 		id = idSer,
 		GetCD = function()
-			if ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0)) then
+			if (((IsSpellKnown(385125)) and (((s_buff_Dawn < 2) and (s_hp > 4)) or ((s_buff_Dawn > 1) and (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) or ((not(IsSpellKnown(385125))) and ((s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)))) and ((IsUsableSpell(idSer)) and (IsSpellKnown(152262))) then
 				return GetCooldown(idSer)
 			end
 			return 100
@@ -764,14 +779,13 @@ local actions = {
 				s_hp = max(3, s_hp - 3)
 		end,
 		info = "Seraphim",
-		reqTalent = 17601,
 	},
 
 	--Smart Seraphim
 	s1m = {
 		id = idSer,
 		GetCD = function()
-			if ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 2) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0)) and ((((IsSpellKnown(343527)) and (GetCooldown(idExecutionSentence) < 5)) or ((IsSpellKnown(343721)) and (GetCooldown(idFinal) < 5)) or ((IsSpellKnown(343527)) and (IsSpellKnown(343721)) and (GetCooldown(idFinal) < 5) and (GetCooldown(idExecutionSentence) < 5))) or ((not(IsSpellKnown(343527))) and (not(IsSpellKnown(343721))))) then
+			if ((s_hp >= 3) or ((s_hp >= 2) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)) and ((((IsSpellKnown(343527)) and (GetCooldown(idExecutionSentence) < 5)) or ((IsSpellKnown(343721)) and (GetCooldown(idFinal) < 5)) or ((IsSpellKnown(343527)) and (IsSpellKnown(343721)) and (GetCooldown(idFinal) < 5) and (GetCooldown(idExecutionSentence) < 5))) or ((not(IsSpellKnown(343527))) and (not(IsSpellKnown(343721))))) and ((IsUsableSpell(idSer)) and (IsSpellKnown(152262))) then
 				return GetCooldown(idSer)
 			end
 			return 100
@@ -780,16 +794,15 @@ local actions = {
 			s_ctime = s_ctime + s_gcd + 1.5
 				s_hp = max(3, s_hp - 3)
 		end,
-		info = "Seraphim for 1m Build (Tries to Sync Seraphim w/ other 1m CDs",
-		reqTalent = 17601,
+		info = "Seraphim for 1m Build (Tries to Sync Seraphim w/ other 1m CDs)",
+
 	},
 
-	--Seraphim w/5 HoPo
+	--Seraphim w/5 HoPo, removed boss target level which was included for unknown reasons
 	s5 = {
 		id = idSer,
 		GetCD = function()
-		level = UnitLevel("target")
-			if ((level < 0) or (level > 61)) and ((s_hp >= 5) or ((s_hp >= 4) and (s_buff_TheFiresOfJustice > 0)) or ((s_hp >= 4) and (s_buff_MagJ > 0)) or (s_buff_DivinePurpose > 0)) then
+			if (s_hp >= 5) and (IsUsableSpell(idSer)) and (IsSpellKnown(152262)) then
 				return GetCooldown(idSer)
 			end
 			return 100
@@ -799,9 +812,24 @@ local actions = {
 				s_hp = max(5, s_hp - 3)
 		end,
 		info = "Seraphim at 5 Holy Power",
-		reqTalent = 17601,
+
 	},
 	
+	--Seraphim dusk n dawn
+	-- s_dnd = {
+		-- id = idSer,
+		-- GetCD = function()
+			-- if (IsUsableSpell(idSer)) and (IsSpellKnown(152262)) and ((s_buff_Dawn < 2) and (s_hp > 4)) or ((s_buff_Dawn > 1) and (s_hp > 2) or ((s_hp > 1) and (s_buff_TheFiresOfJustice > 0)) or (s_buff_DivinePurpose > 0)) then
+				-- return GetCooldown(idSer)
+			-- end
+			-- return 100
+		-- end,
+		-- UpdateStatus = function()
+			-- s_ctime = s_ctime + s_gcd + 1.5
+				-- s_hp = max(3, s_hp - 3)
+		-- end,
+		-- info = "Seraphim",
+	-- },
 
 	-- --------------------------------------------
 	-- Divine Purpose Procs
@@ -822,67 +850,23 @@ local actions = {
 	},
 
 	-- ----------------------------------
-	-- Covenant Abilities
+	-- (Ex)Covenant Abilities
 	-- ----------------------------------
 
-	--Vanq Hamma no j
-	vh = {
-		id = idVanq,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s_VanquishersHammerCharges == 1) and ((C_QuestLog.IsQuestFlaggedCompleted(60021) and (UiMapID == 1536) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328204)) then
-				return GetCooldown(idVanq)
-			end
-			return 100
-		end,
-		
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			if (s_buff_ha > 0) then
-				s_hp = min(3, s_hp + 3)
-			else
-				s_hp = min(3, s_hp + 1)
-			s_VanquishersHammerCharges = max(0, s_VanquishersHammerCharges - 1)
-			end
 
-		end,
-		info = "Vanquisher's Hammer (Necrolord) [Use for VH @ 1 Charge with Lego]",
-	},
-
-
-	vh2 = {
-		id = idVanq,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s_VanquishersHammerCharges == 2) and ((C_QuestLog.IsQuestFlaggedCompleted(60021) and (UiMapID == 1536) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328204)) then
-				return GetCooldown(idVanq)
-			end
-			return 100
-		end,
-		
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			if (s_buff_ha > 0) then
-				s_hp = min(3, s_hp + 3)
-			else
-				s_hp = min(3, s_hp + 1)
-			s_VanquishersHammerCharges = max(0, s_VanquishersHammerCharges - 1)
-			end
-
-		end,
-		info = "Vanquisher's Hammer (Necrolord) @ 2 Charges [with Lego]",
-	},
-
-	--Divine Toll -From C_quest to IsSpellKnown is one string, commented out j debuff so addon will stop recommending dt to apply j. (it causes issues with the rotation)
+	--Divine Toll 
 	dt = {
 		id = idToll,
 		GetCD = function()
-		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s1 ~= idToll) and (((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (not(IsSpellKnown(152262)))) or (((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971))) then
-				return GetCooldown(idToll)
+
+			if (s1 ~= idToll) and not(IsPlayerSpell(375576)) and IsUsableSpell(304971) then
+				return GetCooldown(idTollOld)	
 			end
+
+			if (s1 ~= idToll) and IsPlayerSpell(375576) then
+				return GetCooldown(idToll)	
+			end
+
 			return 100 -- lazy stuff
 		end,
 			UpdateStatus = function()
@@ -894,15 +878,14 @@ local actions = {
 					s_hp = min(3, s_hp + 1)
 				end
 		end,
-		info = "Divine Toll (Kyrian) for 1 min build. (Tries to sync DT w/ other 1m CDs)",
+		info = "Divine Toll",
 	},
 
-	--Divine Toll -From C_quest to IsSpellKnown is one string, commented out j debuff so addon will stop recommending dt to apply j. (it causes issues with the rotation)
+	--Divine Toll 
 	dt1m = {
 		id = idToll,
 		GetCD = function()
-		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s1 ~= idToll) and (((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (not(IsSpellKnown(152262)))) or (((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and IsSpellKnown(152262) and (s_buff_Seraphim > 1)) then
+			if (s1 ~= idToll) and (s_buff_Seraphim > 1) and (IsUsableSpell(375576)) then
 				return GetCooldown(idToll)
 			end
 			return 100 -- lazy stuff
@@ -916,126 +899,9 @@ local actions = {
 					s_hp = min(3, s_hp + 1)
 				end
 		end,
-		info = "Divine Toll (Kyrian) for 1 min build. (Tries to sync DT w/ other 1m CDs)",
+		info = "Divine Toll for 1 min build. (Tries to sync DT w/ other 1m CDs)",
 	},
 
-	--Divine Toll w/ final reckoning off cd -why is not final recknoning in these strings???
---	dt_fr = {
---		id = idToll,
---		GetCD = function()
---		UiMapID = C_Map.GetBestMapForUnit("player")
---			if (s1 ~= idToll) and ((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) --and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (not(IsSpellKnown(idExecutionSentence))) and (GetCooldown(idFinal) < 1) then
---				return GetCooldown(idToll)
---			end
---			return 100 -- lazy stuff
---		end,
---			UpdateStatus = function()
---			s_ctime = s_ctime + s_gcd + 1.5
---			s_debuff_Judgement = 8
---				if (s_buff_ha > 0) then
---					s_hp = min(3, s_hp + 2)
---				else
---					s_hp = min(3, s_hp + 1)
---				end
---		end,
---		info = "Divine Toll (Kyrian) w/ Final Reckoning (Talent) ready",
---		reqTalent = 22634,
---	},
-
-	--Divine Toll w/es up
---	dt_es = {
---		id = idToll,
---		GetCD = function()
---		UiMapID = C_Map.GetBestMapForUnit("player")
---			if (s1 ~= idToll) and ((C_QuestLog.IsQuestFlaggedCompleted(60222) and (UiMapID == 1533) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) --and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(304971)) and (s_debuff_Exec > 2) then
---				return GetCooldown(idToll)
---			end
---			return 100 -- lazy stuff
---		end,
---			UpdateStatus = function()
---			s_ctime = s_ctime + s_gcd + 1.5
---			s_debuff_Judgement = 8
---				if (s_buff_ha > 0) then
---					s_hp = min(3, s_hp + 3)
---				else
---					s_hp = min(3, s_hp + 1)
---				end
---		end,
---		info = "Divine Toll (Kyrian) w/ Execution Sentence up",
---		reqTalent = 23467,
---	},
-
-	--Ashen Hallow on Boss fights
-	--ashx = {
-	--	id = idAsh,
-	--	GetCD = function()
-	--	level = UnitLevel("target")
-	--	UiMapID = C_Map.GetBestMapForUnit("player")
-	--		if (s1 ~= idAsh) and ((C_QuestLog.IsQuestFlaggedCompleted(57179) and (UiMapID == 1525) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not--(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(316958)) and ((level < 0) or (level > 61)) then
-	--			return GetCooldown(idAsh)
-	--		end
-	--		return 100
-	--	end,
-	--	UpdateStatus = function()
-	--		s_ctime = s_ctime + s_gcd + 1.5 / s_haste
---
-	--	end,
-	--	info = "Ashen Hallow on Boss Fights",
-	--},
---
-	--Ashen Hallow
-	ash = {
-		id = idAsh,
-		GetCD = function()
-		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s1 ~= idAsh) and ((C_QuestLog.IsQuestFlaggedCompleted(57179) and (UiMapID == 1525) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(316958)) then
-				return GetCooldown(idAsh)
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
-
-		end,
-		info = "Ashen Hallow (Venthyr)",
-	},
-
-	--Hammer of Wrath w/ Ash
-	--how_ash = {
-	--	id = idHoW,
-	--	GetCD = function()
-	--		if (s1 ~= idHoW) and IsUsableSpell(idHoW) and (IsSpellKnown(24275)) and (((C_QuestLog.IsQuestFlaggedCompleted(57179) and (UiMapID == 1525) and (not--(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(316958)) and (GetCooldown(idAsh) > 212)) then
-	--			return GetCooldown(idHoW)
-	--		end
-	--		return 100
-	--	end,
-	--		UpdateStatus = function()
-	--		s_ctime = s_ctime + s_gcd + 1.5
-	--			if (s_buff_ha > 0) then
-	--				s_hp = min(3, s_hp + 3)
-	--			else
-	--				s_hp = min(3, s_hp + 1)
-	--			end
-	--	end,
-	--	info = "Hammer of Wrath with Ashen Hallow Buff",
-	--},
-
-	--Blessings of the Night Fae
-	bless = {
-		id = idSummer,
-		GetCD = function()
-		UiMapID = C_Map.GetBestMapForUnit("player")
-			if (s1 ~= idSummer) and ((C_QuestLog.IsQuestFlaggedCompleted(60600) and (UiMapID == 1565) and (not(C_QuestLog.IsQuestFlaggedCompleted(57878))) and (not(C_QuestLog.IsQuestFlaggedCompleted(62000)))) or IsSpellKnown(328620)) then
-				return GetCooldown(idSummer)
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
-
-		end,
-		info = "Blessings of The Night Fae",
-	},
 
 }
 
@@ -1080,6 +946,7 @@ local function GetDebuff(debuff)
 	return left
 end
 
+
 -- reads all the interesting data // List of Buffs
 local function GetStatus()
 	-- current time
@@ -1100,22 +967,26 @@ local function GetStatus()
 	s_buff_TheFiresOfJustice = GetBuff(ln_buff_TheFiresOfJustice)
 	s_buff_DivinePurpose = GetBuff(ln_buff_DivinePurpose)
 	s_buff_aow = GetBuff(ln_buff_aow)
-	s_buff_rv = GetBuff(ln_buff_rv)
-	s_buff_ds = GetBuff(ln_buff_ds)
 	s_buff_ds2 = GetBuff(ln_buff_ds2)
 	s_buff_aw = GetBuff(ln_buff_aw)
 	s_buff_ha = GetBuff(ln_buff_ha)
-	s_buff_Vanq = GetBuff(ln_buff_Vanq)
-	s_buff_MagJ = GetBuff(ln_buff_MagJ)
 	s_buff_FinalVerdict = GetBuff(ln_buff_FinalVerdict)
 	s_buff_RighteousVerdict = GetBuff(ln_buff_RighteousVerdict)
 	s_buff_Seraphim = GetBuff(ln_buff_Seraphim)
+	s_buff_SealedVerdict = GetBuff(ln_buff_SealedVerdict)
+	s_buff_Dawn = GetBuff(ln_buff_Dawn)
+	s_buff_Dusk = GetBuff(ln_buff_Dusk)
+	s_buff_Woa = GetBuff(ln_buff_Woa)
+	s_buff_CrusadersStrength = GetBuff(ln_buff_CrusadersStrength)
+	s_buff_ds = GetBuff(ln_buff_ds)
+	s_buff_Crusade = GetBuff(ln_buff_Crusade)
 
 	-- the debuffs
 	s_debuff_Judgement = GetDebuff(ln_debuff_Judgement)
 	s_debuff_Exec = GetDebuff(ln_debuff_Exec)
 	s_debuff_FinalReckoning50 = GetDebuff(ln_debuff_FinalReckoning50)
 	s_debuff_FinalReckoning10 = GetDebuff(ln_debuff_FinalReckoning10)
+	s_debuff_Sanctify = GetDebuff(ln_debuff_Sanctify)
 
 	-- crusader strike stacks
 	local cd, charges = GetCSData()
@@ -1124,10 +995,6 @@ local function GetStatus()
 	-- HoW stacks
 	local cd, charges = GetHoWData()
 	s_HoWCharges = charges
-
-	-- vanq hamma stacks
-	local cd, charges = GetVHData()
-	s_VanquishersHammerCharges = charges
 
 	-- client hp and haste
 	s_hp = UnitPower("player", 9)
@@ -1234,15 +1101,25 @@ function xmod.Rotation()
 	s_buff_RighteousVerdict = max(0, s_buff_RighteousVerdict - s_otime)
 	s_buff_TheFiresOfJustice = max(0, s_buff_TheFiresOfJustice - s_otime)
 	s_buff_DivinePurpose = max(0, s_buff_DivinePurpose - s_otime)	
-	s_buff_rv = max(0, s_buff_rv - s_otime)
-	s_buff_ds = max(0, s_buff_ds - s_otime)
 	s_buff_ds2 = max(0, s_buff_ds2 - s_otime)
 	s_buff_aw = max(0, s_buff_aw - s_otime)
 	s_buff_ha = max(0, s_buff_ha - s_otime)
-	s_buff_Vanq = max(0, s_buff_Vanq - s_otime)
-	s_buff_MagJ = max(0, s_buff_MagJ - s_otime)
 	s_buff_FinalVerdict = max(0, s_buff_FinalVerdict - s_otime)
 	s_buff_Seraphim = max(0, s_buff_Seraphim - s_otime)
+	s_buff_SealedVerdict = max(0, s_buff_SealedVerdict - s_otime)
+	s_buff_Dawn = max(0, s_buff_Dawn - s_otime)
+	s_buff_Dusk = max(0, s_buff_Dusk - s_otime)
+	s_buff_Woa = max(0, s_buff_Woa - s_otime)
+	s_buff_CrusadersStrength = max(0, s_buff_CrusadersStrength - s_otime)	
+	s_buff_ds = max(0, s_buff_ds - s_otime)
+	s_buff_Crusade = max(0, s_buff_Crusade - s_otime)
+
+	-- the debuffs
+	s_debuff_Judgement = max(0, s_debuff_Judgement - s_otime)
+	s_debuff_Exec = max(0, s_debuff_Exec - s_otime)
+	s_debuff_FinalReckoning10 = max(0, s_debuff_FinalReckoning10 - s_otime)
+	s_debuff_FinalReckoning50 = max(0, s_debuff_FinalReckoning50 - s_otime)
+	s_debuff_Sanctify = max(0, s_debuff_Sanctify - s_otime)
 
 	-- crusader strike stacks
 	local cd, charges = GetCSData()
@@ -1260,13 +1137,6 @@ function xmod.Rotation()
 
 	end
 
-	-- VanquishersHammer Charges
-	local cd, charges = GetVHData()
-	s_VHCharges = charges
-	if (s1 == idVanq) then
-		s_VHCharges = s_VHCharges - 1
-
-	end
 
 	if debug and debug.enabled then
 		debug:AddBoth("csc", s_CrusaderStrikeCharges)

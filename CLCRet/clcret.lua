@@ -127,24 +127,6 @@ local defaults = {
 		-- aura buttons
 		-- 4 examples, rest init to "blank" later
 		auras = {},
-		
-		-- Sov bars
-		sov = {
-			enabled = false,
-			width = 200,
-			height = 15,
-			spacing = 5,
-			color = {1, 1, 0, 1},
-			point = "TOP",
-			pointParent = "BOTTOM",
-			x = 0,
-			y = 0,
-			growth = "down",
-			updatesPerSecond = 20,
-			colorNonTarget = {1, 1, 0, 1},
-			targetDifference = false,
-			useButtons = false,
-		},
 	}
 }
 -- blank rest of the auras buttons in default options
@@ -177,7 +159,7 @@ clcret.db_defaults = defaults
 -- ---------------------------------------------------------------------------------------------------------------------
 local throttle = 0
 local throttleAuras = 0
-local throttleSov = 0
+-- local throttleSov = 0
 local function OnUpdate(self, elapsed)
 	throttle = throttle + elapsed
 	if throttle > clcret.scanFrequency then
@@ -195,14 +177,7 @@ local function OnUpdate(self, elapsed)
 			clcret[db.auras[auraIndex].data.exec]()
 		end
 	end
-	
-	if db.sov.enabled then
-		throttleSov = throttleSov + elapsed
-		if throttleSov > clcret.scanFrequencySov then
-			throttleSov = 0
-			clcret:UpdateSovBars()
-		end
-	end
+
 end
 -- ---------------------------------------------------------------------------------------------------------------------
 
@@ -238,7 +213,7 @@ function clcret:QUEST_LOG_UPDATE()
 	-- test if it's a paladin or not
 	
 	-- get player name for sov tracking 
-	playerName = UnitName("player")
+	--playerName = UnitName("player")
 	
 	self.CheckQueue = self.DoNothing
 	
@@ -247,18 +222,17 @@ function clcret:QUEST_LOG_UPDATE()
 	-- update rates
 	self.scanFrequency = 1 / db.updatesPerSecond
 	self.scanFrequencyAuras = 1 / db.updatesPerSecondAuras
-	self.scanFrequencySov = 1 / db.sov.updatesPerSecond
 	
 	-- blank options page for title
 	local optionFrame = CreateFrame("Frame", nil, UIParent)
 	optionFrame.name = "CLCRet"
-	local optionFrameLoad = CreateFrame("Button", nil, optionFrame, "UIPanelButtonTemplate")
-	optionFrameLoad:SetWidth(150)
-	optionFrameLoad:SetHeight(22)
-	optionFrameLoad:SetText("Load Options")
-	optionFrameLoad:SetPoint("TOPLEFT", 20, -20)
-	optionFrameLoad:SetScript("OnClick", ShowOptions)
-	InterfaceOptions_AddCategory(optionFrame)
+	-- local optionFrameLoad = CreateFrame("Button", nil, optionFrame, "UIPanelButtonTemplate")
+	-- optionFrameLoad:SetWidth(150)
+	-- optionFrameLoad:SetHeight(22)
+	-- optionFrameLoad:SetText("Load Options")
+	-- optionFrameLoad:SetPoint("TOPLEFT", 20, -20)
+	-- optionFrameLoad:SetScript("OnClick", ShowOptions)
+	-- InterfaceOptions_AddCategory(optionFrame)
 	-- chat command that points to our category
 	self:RegisterChatCommand("clcret", ShowOptions)
 	self:RegisterChatCommand("clcretlp", CmdLinePrio)
@@ -281,11 +255,7 @@ function clcret:QUEST_LOG_UPDATE()
 	if not db.fullDisable then
 		self:RegisterEvent("PLAYER_TALENT_UPDATE")
 	end
-	
-	-- init sov bars
-	-- TODO: Make it dynamic later
-	-- self:InitSovBars()
-	
+
 	-- icd stuff
 	self:AuraButtonUpdateICD()
 	
@@ -495,15 +465,7 @@ function clcret:AuraButtonExecItemVisibleAlways()
 	local index = auraIndex
 	local button = auraButtons[index]
 	local data = db.auras[index].data
-	
-	-- hide the item if is not equiped
-	--[[
-	if not IsEquippedItem(data.spell) then
-		button:Hide()
-		return
-	end
-	--]]
-	
+
 	-- fix the texture once
 	if not button.hasTexture then
 		button.hasTexture = true
@@ -530,15 +492,7 @@ function clcret:AuraButtonExecItemVisibleNoCooldown()
 	local index = auraIndex
 	local button = auraButtons[index]
 	local data = db.auras[index].data
-	
-	-- hide the item if is not equiped
-	--[[
-	if not IsEquippedItem(data.spell) then
-		button:Hide()
-		return
-	end
-	--]]
-	
+
 	-- fix the texture once
 	if not button.hasTexture then
 		button.hasTexture = true
@@ -1075,8 +1029,6 @@ function clcret:FullDisableToggle()
 end
 
 -- ---------------------------------------------------------------------------------------------------------------------
-
-
 -- HELPER FUNCTIONS
 -- ---------------------------------------------------------------------------------------------------------------------
 function clcret:AuraButtonResetTextures()
@@ -1167,7 +1119,7 @@ end
 
 
 function clcret:RegisterCLEU()
-	if icd.cleu or db.sov.enabled then
+	if icd.cleu then
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	else
 		self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -1177,11 +1129,7 @@ end
 
 -- cleu dispatcher wannabe
 function clcret:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, spellType, dose, ...)
-	-- pass info for the sov function
-	if db.sov.enabled then
-		clcret:SOV_COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, spellType, dose, ...)
-	end
-	
+
 	-- return if no icd
 	if not icd.cleu then return end
 	
