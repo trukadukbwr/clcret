@@ -1,7 +1,7 @@
 ## Interface: 100007
 ## Title: CLCRet
 ## Notes: Retribution FCFS helper
-## Author: Calcute of Ravencrest
+## Author: 
 ## SavedVariables: clcretDB
 
 #@no-lib-strip@
