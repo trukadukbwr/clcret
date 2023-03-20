@@ -85,16 +85,16 @@ function xmod.BuildOptions()
 							},
 
 
-							csclash = {
-								order = 2, type = "range", min = 0, max = 2, step = 0.01, name = "Crusader Strike",
-								get = Get, set = Set,
-							},
+							-- csclash = {
+								-- order = 2, type = "range", min = 0, max = 2, step = 0.01, name = "Crusader Strike",
+								-- get = Get, set = Set,
+							-- },
 
 
-							exoclash = {
-								order = 3, type = "range", min = 0, max = 2, step = 0.01, name = "Exorcism",
-								get = Get, set = Set,
-							},
+							-- exoclash = {
+								-- order = 3, type = "range", min = 0, max = 2, step = 0.01, name = "Exorcism",
+								-- get = Get, set = Set,
+							-- },
 
 
 						},

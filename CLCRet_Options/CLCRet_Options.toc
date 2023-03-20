@@ -1,4 +1,4 @@
-## Interface: 100005
+## Interface: 100007
 ## Title: CLCRet Options
 ## Notes: A LoD option menu for CLCRet
 ## Author: Calcute
