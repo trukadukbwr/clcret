@@ -143,6 +143,7 @@ local idBoJ2 = 383342
 local idJudgment2 = 405278
 local idHoW2 = 383314
 local idTemplarSlash = 406647
+local idDivineHammer = 198034
 
 -- talents, makes passive
 local idCrusadingStrikes = 404542
@@ -312,9 +313,14 @@ local actions = {
 	cons = {
 		id = idConsecration,
 		GetCD = function()
-			if (s1 ~= idConsecration) and IsSpellKnownOrOverridesKnown(idConsecration) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idConsecratedBlade))) then
+			if (s1 ~= idConsecration) and IsSpellKnownOrOverridesKnown(idConsecration) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idConsecratedBlade))) and (not(IsPlayerSpell(idDivineHammer))) then
 				return GetCooldown(idConsecration)
 			end
+			
+			if (s1 ~= idConsecration) and IsSpellKnownOrOverridesKnown(idConsecration) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idConsecratedBlade))) and IsPlayerSpell(idDivineHammer) then
+				return GetCooldown(idDivineHammer)
+			end
+			
 			return 100
 		end,
 		UpdateStatus = function()
