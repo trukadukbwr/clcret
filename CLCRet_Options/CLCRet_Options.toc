@@ -1,9 +1,10 @@
-## Interface: 100100
+## Interface: 100105
 ## Title: CLCRet Options
 ## Notes: A LoD option menu for CLCRet
-## Author:
+## Author: Calcute
 ## Dependencies: CLCRet
 ## LoadOnDemand: 1
+## IconTexture: 626003
 
 #@no-lib-strip@
 embeds.xml
