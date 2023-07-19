@@ -109,7 +109,7 @@ if clcInfo then debug = clcInfo.debug end
 xmod.version = 9000001
 xmod.defaults = {
 	version = xmod.version,
-	prio = "es tv5 ds_s tvdp woa fr ts2 how_aw tv boj_aow dt ds boj2 j boj ts1 cs2 cs cons",
+	prio = "es tv5 ds_s tvdp how_aw fr tv woa how ts2 dt boj j ts1 cs cons",
 	rangePerSkill = false,
 	howclash = 0, -- priority time for hammer of wrath
 	csclash = 0, -- priority time for cs
@@ -142,6 +142,7 @@ local idSanctify = 382536
 local idBoJ2 = 383342
 local idJudgment2 = 405278
 local idHoW2 = 383314
+local idTemplarStrike = 407480
 local idTemplarSlash = 406647
 local idDivineHammer = 198034
 
@@ -337,7 +338,7 @@ local actions = {
 	woa = {
 		id = idWakeOfAshes,
 		GetCD = function()
-			if (s1 ~= idWakeOfAshes) and IsSpellKnownOrOverridesKnown(idWakeOfAshes) and (s_hp < 4) and IsUsableSpell(idWakeOfAshes) then
+			if (s1 ~= idWakeOfAshes) and IsSpellKnownOrOverridesKnown(idWakeOfAshes) and (s_hp < 3) and IsUsableSpell(idWakeOfAshes) then
 					return GetCooldown(idWakeOfAshes)
 			end
 			return 100
@@ -345,25 +346,25 @@ local actions = {
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 			
-			-- we need to trick the addon so it doesn't suggest a 3HoPo fr and wake and overcap us
+			-- we need to trick the addon so it doesn't suggest a 3HoPo fr along with WoA and overcap HoPo
 				if IsPlayerSpell(idDivineAuxiliary) then
 					s_hp = max(3, s_hp + 3)
 				else
-					s_hp = min(3, s_hp + 2)
+					s_hp = min(3, s_hp + 3)
 				end
 				
 		end,
 		info = "Wake Of Ashes",
 	},
 
-	--Judgment
+	-- Judgment
 	j = {
 		id = idJudgment,
 		GetCD = function()
 			if (s1 ~= idJudgment) and ((s_JudgmentCharges == 1) or (s_JudgmentCharges == 2)) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
 				return GetCooldown(idJudgment)
 			end
-			return 100 -- lazy stuff
+			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
@@ -388,7 +389,7 @@ local actions = {
 			if (s1 ~= idJudgment) and (s_JudgmentCharges == 2) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
 				return GetCooldown(idJudgment)
 			end
-			return 100 -- lazy stuff
+			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
@@ -448,14 +449,42 @@ local actions = {
 			return cd + 0.5
 		end,
 		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
+			s_ctime = s_ctime + s_gcd + 0
 
 			s_hp = min(3, s_hp + 1)
 			
-			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
+			-- s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
 			
 		end,
 		info = "Templar Slash (2nd Part of Crusader Strike Combo)(TALENT)",
+	},
+
+	--Crusader Strike; templar strike 2nd part combo, about to expire
+	ts2_exp = {
+		id = idCrusaderStrike,
+		GetCD = function()
+			local tscd = select(3, GetSpellCharges(407480))
+			local tscdexpiring = ((GetTime() > ((tscd) + 2)) and (GetTime() < ((tscd) + 4)))
+			local cd, charges = GetCSData()
+			
+			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsSpellKnownOrOverridesKnown(idTemplarSlash) and tscdexpiring then
+				return 0
+			end
+			return cd + 0.5
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 0
+
+			s_hp = min(3, s_hp + 1)
+			
+			-- s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
+			
+		end,
+		info = "Templar Slash Combo(TALENT) about to expire",
 	},
 
 	--Crusader Strike
@@ -482,6 +511,32 @@ local actions = {
 			
 		end,
 		info = "Crusader Strike",
+	},
+
+	--Crusader Strike, special, anvil trinket
+	cs_a = {
+		id = idCrusaderStrike,
+		GetCD = function()
+			local cd, charges = GetCSData()
+			
+			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and ((s_CrusaderStrikeCharges == 1) or (s_CrusaderStrikeCharges == 2)) and (s_hp < 3) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsEquippedItem(202617) then
+				return 0
+			end
+			return cd + 0.5
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+			s_hp = min(3, s_hp + 1)
+			
+			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
+			
+		end,
+		info = "Crusader Strike for Elementium Pocket Anvil procs",
 	},
 
 	--Crusader Strike @ 2 charges
@@ -563,7 +618,7 @@ local actions = {
 	how_aw = {
 		id = idHoW,
 		GetCD = function()
-			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and (((s_buff_aw > 1) or (s_buff_Crusade > 1)) or (s_buff_FinalVerdict > 1)) and IsSpellKnownOrOverridesKnown(idHoW) then
+			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and ((s_buff_aw > 1) or (s_buff_Crusade > 1)) and ((s_HoWCharges == 1) or (s_HoWCharges == 2)) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
 				return GetCooldown(idHoW)
 			end
 			return 100
@@ -581,6 +636,30 @@ local actions = {
 			
 		end,
 		info = "Hammer of Wrath during Avenging Wrath",
+	},
+	
+		--Hammer of Wrath (2 charge talent) w/ Avenging Wrath 
+	how2_aw = {
+		id = idHoW,
+		GetCD = function()
+			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and ((s_buff_aw > 1) or (s_buff_Crusade > 1)) and (s_HoWCharges == 2) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
+				return GetCooldown(idHoW)
+			end
+			return 100
+		end,
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+				if IsPlayerSpell(idHoW2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
+					s_hp = min(3, s_hp + 2)
+				else
+					s_hp = min(3, s_hp + 1)
+				end
+			
+			s_HoWCharges = max(0, s_HoWCharges - 1)
+			
+		end,
+		info = "Hammer of Wrath (2 charges) during Avenging Wrath",
 	},
 
 	--Blade of Justice
@@ -607,7 +686,7 @@ local actions = {
 		info = "Blade of Justice",
 	},
 
-	--Blade of Justice
+	--Blade of Justice 2 stacks
 	boj2 = {
 		id = idBladeOfJustice,
 		GetCD = function()
@@ -632,28 +711,28 @@ local actions = {
 	},
 
 	--Blade of Justice w/ Art of War proc
-	boj_aow = {
-		id = idBladeOfJustice,
-		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (s_buff_aow > 1) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				return GetCooldown(idBladeOfJustice)
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
+	-- boj_aow = {
+		-- id = idBladeOfJustice,
+		-- GetCD = function()
+			-- if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (s_buff_aow > 1) and (not(IsUsableSpell(idTemplarsVerdict))) then
+				-- return GetCooldown(idBladeOfJustice)
+			-- end
+			-- return 100
+		-- end,
+		-- UpdateStatus = function()
+			-- s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idBoJ2) then
-					s_hp = min(3, s_hp + 2)
-				else
-					s_hp = min(3, s_hp + 1)
-				end
+				-- if IsPlayerSpell(idBoJ2) then
+					-- s_hp = min(3, s_hp + 2)
+				-- else
+					-- s_hp = min(3, s_hp + 1)
+				-- end
 
-			s_BoJCharges = max(0, s_BoJCharges - 1)
+			-- s_BoJCharges = max(0, s_BoJCharges - 1)
 
-		end,
-		info = "Blade of Justice w/ Art of War Proc",
-	},
+		-- end,
+		-- info = "Blade of Justice w/ Art of War Proc",
+	-- },
 
 	-- ----------------------------------
 	-- Holy Power Consumers
@@ -702,10 +781,11 @@ local actions = {
 
 
 	--Templar's Verdict no j
+	-- and (((s_debuff_Sanctify < 1) and IsPlayerSpell(idSanctify) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(idSanctify)) or (not(IsPlayerSpell(idSanctify)))))
 	tv = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			if (s1 ~= idTemplarsVerdict) and (((s_debuff_Sanctify < 1) and IsPlayerSpell(idSanctify) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(idSanctify)) or (not(IsPlayerSpell(idSanctify))))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) then
+			if (s1 ~= idTemplarsVerdict) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) and ((GetCooldown(idJudgment) > 2) or (IsPlayerSpell(idToll) and (GetCooldown(idToll) > 2))) then
 				return 0
 			end
 			return 100
@@ -769,7 +849,7 @@ local actions = {
 	fr = {
 		id = idFinalReckoning,
 		GetCD = function()
-			if (s1 ~= idFinalReckoning) and IsSpellKnownOrOverridesKnown(idFinalReckoning) and (((not(IsPlayerSpell(idDivineAuxiliary))) and (s_hp > 2)) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 1))) and (GetCooldown(idFinalReckoning) < 3) then
+			if (s1 ~= idFinalReckoning) and IsSpellKnownOrOverridesKnown(idFinalReckoning) and (((not(IsPlayerSpell(idDivineAuxiliary))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or (not(IsPlayerSpell(idVanguard)) and (s_hp > 2)))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 2))) and (GetCooldown(idFinalReckoning) < 3) then
 				return GetCooldown(idFinalReckoning)
 			end
 			return 100
@@ -791,7 +871,8 @@ local actions = {
 	es = {
 		id = idExecutionSentence,
 		GetCD = function()
-			if (s1 ~= idExecutionSentence) and IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5))) and (GetCooldown(idExecutionSentence) < 2) then
+			level = UnitLevel("target")
+			if (s1 ~= idExecutionSentence) and IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5))) and (GetCooldown(idExecutionSentence) < 2) and ((level < 0) or (level > 72)) then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
@@ -840,7 +921,7 @@ local actions = {
 				return GetCooldown(idToll)	
 			end
 
-			return 100 -- lazy stuff
+			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
