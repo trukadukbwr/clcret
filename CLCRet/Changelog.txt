@@ -1,7 +1,11 @@
+r255 07/19/2023
+-Updated for Dragonflight patch 10.1.5
+-Cleaned up code
+-Added string to use Templar Slash (second part of combo) if it's about to expire
+
 r254 03/20/2023
 -Updated for 10.0.7 rework
 -Cleaned up code
 
 r253 10/20/2022
 -Updated for Dragonflight
-
