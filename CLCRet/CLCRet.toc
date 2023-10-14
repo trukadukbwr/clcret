@@ -1,7 +1,7 @@
-## Interface: 100105
-## Title: CLCRet
+## Interface: 100107
+## Title: |cffF58CBACLCret|r
 ## Notes: Retribution FCFS helper
-## Author: Trukarak on Blackwater Raiders
+## Author: Trukarak-Blackwater Raiders
 ## SavedVariables: clcretDB
 ## IconTexture: 626003
 
