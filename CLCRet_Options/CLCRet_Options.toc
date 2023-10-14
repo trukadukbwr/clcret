@@ -1,7 +1,7 @@
-## Interface: 100105
-## Title: CLCRet Options
+## Interface: 100107
+## Title: |cffF58CBACLCRet Options|r
 ## Notes: A LoD option menu for CLCRet
-## Author: Calcute
+## Author: Trukarak-Blackwater Raiders
 ## Dependencies: CLCRet
 ## LoadOnDemand: 1
 ## IconTexture: 626003
