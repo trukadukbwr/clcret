@@ -382,7 +382,7 @@ local actions = {
 		info = "Judgment",
 	},
 
-	--Judgment
+	--Judgment 2 charges
 	j2 = {
 		id = idJudgment,
 		GetCD = function()
@@ -405,6 +405,30 @@ local actions = {
 
 		end,
 		info = "Judgment at 2 Stacks (TALENT)",
+	},
+
+	jx = {
+		id = idJudgment,
+		GetCD = function()
+			if (s1 ~= idJudgment) and ((s_JudgmentCharges == 1) or (s_JudgmentCharges == 2)) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) and (s_debuff_Expurgation > 1) then
+				return GetCooldown(idJudgment)
+			end
+			return 100
+		end,
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			s_debuff_Judgment = 8
+				
+				if IsPlayerSpell(idJudgment2) then
+					s_hp = min(3, s_hp + 2)
+				else
+					s_hp = min(3, s_hp + 1)
+				end
+				
+				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
+
+		end,
+		info = "Judgment w/Expurgation DOT up for t31 2pc",
 	},
 
 	--Crusader Strike; templar strike 1st part combo
@@ -758,7 +782,10 @@ local actions = {
 	ds_s = {
 		id = idDivineStorm,
 		GetCD = function()
-			if (s1 ~= idDivineStorm) and (((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) or (s_buff_DivinePurpose > 0)) and (not(s_debuff_Sanctify > 1)) and IsPlayerSpell(idSanctify) and (s_buff_ds < 1) then
+		
+			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
+			
+			if (s1 ~= idDivineStorm) and VanguardCheck and (not(s_debuff_Sanctify > 1)) and IsPlayerSpell(idSanctify) and (s_buff_ds < 1) then
 				return 0
 			end
 			return 100
@@ -780,12 +807,16 @@ local actions = {
 	-------------------------------------
 
 
-	--Templar's Verdict no j
+	--Templar's Verdict 
 	-- and (((s_debuff_Sanctify < 1) and IsPlayerSpell(idSanctify) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(idSanctify)) or (not(IsPlayerSpell(idSanctify)))))
 	tv = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			if (s1 ~= idTemplarsVerdict) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) and ((GetCooldown(idJudgment) > 2) or (IsPlayerSpell(idToll) and (GetCooldown(idToll) > 2))) then
+		
+			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
+			JudgmentCheck = ((GetSpellCooldown(idJudgment) > 2) or (IsPlayerSpell(idToll) and (GetSpellCooldown(idToll) > 2)))
+			
+			if (s1 ~= idTemplarsVerdict) and VanguardCheck and JudgmentCheck then
 				return 0
 			end
 			return 100
@@ -849,7 +880,13 @@ local actions = {
 	fr = {
 		id = idFinalReckoning,
 		GetCD = function()
-			if (s1 ~= idFinalReckoning) and IsSpellKnownOrOverridesKnown(idFinalReckoning) and (((not(IsPlayerSpell(idDivineAuxiliary))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or (not(IsPlayerSpell(idVanguard)) and (s_hp > 2)))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 2))) and (GetCooldown(idFinalReckoning) < 3) then
+		
+		--Shorthands to make the code easier to understand
+		frCheck = (IsSpellKnownOrOverridesKnown(idFinalReckoning) and (GetCooldown(idFinalReckoning) < 3))
+			--Checks to make sure Divine Auxillary talent will not over cap Holy Power if specced with Vanguard
+		AuxVanguardHPcapCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or (not(IsPlayerSpell(idVanguard)) and (s_hp > 2))))	
+			
+			if (s1 ~= idFinalReckoning) and frCheck and (AuxVanguardHPcapCheck or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 2))) then
 				return GetCooldown(idFinalReckoning)
 			end
 			return 100
@@ -867,12 +904,43 @@ local actions = {
 		info = "Final Reckoning",
 	},
 
+	--Execution Sentence Boss only
+	es_boss = {
+		id = idExecutionSentence,
+		GetCD = function()
+		
+			level = UnitLevel("target")
+			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
+			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and (GetSpellCooldown(idExecutionSentence) < 2))
+			
+			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck and ((level < 0) or (level > 72)) then
+				return GetCooldown(idExecutionSentence)
+			end
+			return 100
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+				if IsPlayerSpell(idDivineAuxiliary) then
+					s_hp = max(3, s_hp + 3)
+				else
+					s_hp = min(3, s_hp + 0)
+				end
+
+		end,
+		info = "Execution Sentence on Boss level mobs only",
+	},
+
 	--Execution Sentence 
 	es = {
 		id = idExecutionSentence,
 		GetCD = function()
+		
 			level = UnitLevel("target")
-			if (s1 ~= idExecutionSentence) and IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5))) and (GetCooldown(idExecutionSentence) < 2) and ((level < 0) or (level > 72)) then
+			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
+			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and (GetSpellCooldown(idExecutionSentence) < 2))
+			
+			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
@@ -933,11 +1001,30 @@ local actions = {
 		info = "Divine Toll",
 	},
 
+	--Divine Toll w/ expurg dot
+	dtx = {
+		id = idToll,
+		GetCD = function()
+
+			if (s1 ~= idToll) and IsPlayerSpell(idToll) and (s_debuff_Expurgation > 1) then
+				return GetCooldown(idToll)	
+			end
+
+			return 100
+		end,
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			--s_debuff_Judgment = 8
+			
+					s_hp = min(3, s_hp + 1)
+
+		end,
+		info = "Divine Toll w/Expurgation DOT up for t31 2pc",
+	},
+
 }
 
 --------------------------------------------------------------------------------
-
-
 
 local function UpdateQueue()
 	-- normal queue
@@ -1188,6 +1275,7 @@ function xmod.Rotation()
 		s_JudgmentCharges = s_JudgmentCharges - 1
 
 	end
+
 
 	---------------
 
