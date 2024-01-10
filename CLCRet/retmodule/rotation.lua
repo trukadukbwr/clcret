@@ -109,7 +109,7 @@ if clcInfo then debug = clcInfo.debug end
 xmod.version = 9000001
 xmod.defaults = {
 	version = xmod.version,
-	prio = "es tv5 ds_s tvdp how_aw fr tv woa how ts2 dt boj j ts1 cs cons",
+	prio = "es ts2_exp fr tv5 ds_s tv ds woa boj2 boj how_aw how dt how j ts2 cs cons",
 	rangePerSkill = false,
 	howclash = 0, -- priority time for hammer of wrath
 	csclash = 0, -- priority time for cs
@@ -170,6 +170,7 @@ local ln_buff_aw = GetSpellInfo(31884)
 local ln_buff_FinalVerdict = GetSpellInfo(383329)
 local ln_buff_ds = GetSpellInfo(387178)
 local ln_buff_Crusade = GetSpellInfo(231895)
+local ln_buff_EchoesOfWrath = GetSpellInfo(423590)
 
 -- debuffs
 local ln_debuff_Judgment = GetSpellInfo(197277)
@@ -179,7 +180,7 @@ local ln_debuff_Sanctify = GetSpellInfo(382538)
 local ln_debuff_Expurgation = GetSpellInfo(383346)
 
 -- buffs/debuffs
-local s_buff_aow, s_buff_DivinePurpose, s_buff_ds2, s_buff_aw, s_buff_FinalVerdict, s_buff_ds, s_buff_Crusade
+local s_buff_aow, s_buff_DivinePurpose, s_buff_ds2, s_buff_aw, s_buff_FinalVerdict, s_buff_ds, s_buff_Crusade, s_buff_EchoesOfWrath
 local s_debuff_Judgment, s_debuff_ExecutionSentence, s_debuff_FinalReckoning, s_debuff_Sanctify, s_debuff_Expurgation
 
 -- status vars
@@ -287,6 +288,7 @@ end
 -- IsPlayerSpell  -- to check for talent
 -- IsUsableSpell(383469) wont return true unless theres holy power
 -- costs = GetSpellPowerCost(255937)	
+-- Do NOT put a check for "GetSpellCooldown(SpellID or Addon Shorthand)" in code, it will cause issues with GCD and displaying it as current recommendation
 -- -------------------------------------------------------------------------------
 
 -- actions ---------------------------------------------------------------------
@@ -361,7 +363,7 @@ local actions = {
 	j = {
 		id = idJudgment,
 		GetCD = function()
-			if (s1 ~= idJudgment) and ((s_JudgmentCharges == 1) or (s_JudgmentCharges == 2)) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
+			if (s1 ~= idJudgment) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
 				return GetCooldown(idJudgment)
 			end
 			return 100
@@ -410,7 +412,7 @@ local actions = {
 	jx = {
 		id = idJudgment,
 		GetCD = function()
-			if (s1 ~= idJudgment) and ((s_JudgmentCharges == 1) or (s_JudgmentCharges == 2)) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) and (s_debuff_Expurgation > 1) then
+			if (s1 ~= idJudgment) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Expurgation > 1) and (s_buff_EchoesOfWrath < 1) then
 				return GetCooldown(idJudgment)
 			end
 			return 100
@@ -428,7 +430,7 @@ local actions = {
 				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
 
 		end,
-		info = "Judgment w/Expurgation DOT up for t31 2pc",
+		info = "Judgment to trigger Wrathful Sanction (T31 4Pc)",
 	},
 
 	--Crusader Strike; templar strike 1st part combo
@@ -535,32 +537,6 @@ local actions = {
 			
 		end,
 		info = "Crusader Strike",
-	},
-
-	--Crusader Strike, special, anvil trinket
-	cs_a = {
-		id = idCrusaderStrike,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100
-			end
-			
-			if (s1 ~= idCrusaderStrike) and ((s_CrusaderStrikeCharges == 1) or (s_CrusaderStrikeCharges == 2)) and (s_hp < 3) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsEquippedItem(202617) then
-				return 0
-			end
-			return cd + 0.5
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-
-			s_hp = min(3, s_hp + 1)
-			
-			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-			
-		end,
-		info = "Crusader Strike for Elementium Pocket Anvil procs",
 	},
 
 	--Crusader Strike @ 2 charges
@@ -687,10 +663,12 @@ local actions = {
 	},
 
 	--Blade of Justice
+	--Note; No need to check for charges if they don't matter. Just bloated code.
+	--Note; Remove expurgation check after Xpac is over
 	boj = {
 		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and ((s_BoJCharges == 1) or (s_BoJCharges == 2)) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) then
+			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) and (s_debuff_Expurgation < 8) then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
@@ -708,6 +686,32 @@ local actions = {
 
 		end,
 		info = "Blade of Justice",
+	},
+
+	--Blade of Justice to apply Expurg
+	--Note; No need to check for charges if they don't matter. Just bloated code.
+	--Note; Remove expurgation check after Xpac is over
+	bojx = {
+		id = idBladeOfJustice,
+		GetCD = function()
+			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) and (s_debuff_Expurgation < 1) then
+				return GetCooldown(idBladeOfJustice)
+			end
+			return 100
+		end,
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+				if IsPlayerSpell(idBoJ2) then
+					s_hp = min(3, s_hp + 2)
+				else
+					s_hp = min(3, s_hp + 1)
+				end
+
+			s_BoJCharges = max(0, s_BoJCharges - 1)
+
+		end,
+		info = "Blade of Justice to apply initial Expurgation DoT",
 	},
 
 	--Blade of Justice 2 stacks
@@ -735,6 +739,7 @@ local actions = {
 	},
 
 	--Blade of Justice w/ Art of War proc
+	--Note; this code is obsolete but is kept here in case the function changes again in the future.
 	-- boj_aow = {
 		-- id = idBladeOfJustice,
 		-- GetCD = function()
@@ -783,6 +788,7 @@ local actions = {
 		id = idDivineStorm,
 		GetCD = function()
 		
+			--Shorthands to make the code easier to understand
 			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
 			
 			if (s1 ~= idDivineStorm) and VanguardCheck and (not(s_debuff_Sanctify > 1)) and IsPlayerSpell(idSanctify) and (s_buff_ds < 1) then
@@ -812,7 +818,8 @@ local actions = {
 	tv = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-		
+			
+			--Shorthands to make the code easier to understand
 			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
 			JudgmentCheck = ((GetSpellCooldown(idJudgment) > 2) or (IsPlayerSpell(idToll) and (GetSpellCooldown(idToll) > 2)))
 			
@@ -838,6 +845,7 @@ local actions = {
 	tv5 = {
 		id = idTemplarsVerdict,
 		GetCD = function()
+						
 			if (s1 ~= idTemplarsVerdict) and (s_hp > 4) then
 				return 0
 			end
@@ -860,7 +868,12 @@ local actions = {
 	tv_ds = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			if (s1 ~= idTemplarsVerdict) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) and (s_buff_ds > 1) then
+			
+			--Shorthands to make the code easier to understand
+			--"x" is to help prevent user confusion with other "VanguardCheck" in previous code
+			XVanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) 
+		
+			if (s1 ~= idTemplarsVerdict) and XVanguardCheck and (s_buff_ds > 1) then
 				return 0
 			end
 			return 100
@@ -883,7 +896,8 @@ local actions = {
 		
 		--Shorthands to make the code easier to understand
 		frCheck = (IsSpellKnownOrOverridesKnown(idFinalReckoning) and (GetCooldown(idFinalReckoning) < 3))
-			--Checks to make sure Divine Auxillary talent will not over cap Holy Power if specced with Vanguard
+		
+		--Checks to make sure Divine Auxillary talent will not over cap Holy Power if specced with Vanguard
 		AuxVanguardHPcapCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or (not(IsPlayerSpell(idVanguard)) and (s_hp > 2))))	
 			
 			if (s1 ~= idFinalReckoning) and frCheck and (AuxVanguardHPcapCheck or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 2))) then
@@ -909,9 +923,10 @@ local actions = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
+			--Shorthands to make the code easier to understand
 			level = UnitLevel("target")
 			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
-			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and (GetSpellCooldown(idExecutionSentence) < 2))
+			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence))
 			
 			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck and ((level < 0) or (level > 72)) then
 				return GetCooldown(idExecutionSentence)
@@ -936,9 +951,10 @@ local actions = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
+			--Shorthands to make the code easier to understand
 			level = UnitLevel("target")
 			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
-			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence) and (GetSpellCooldown(idExecutionSentence) < 2))
+			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence))
 			
 			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck then
 				return GetCooldown(idExecutionSentence)
@@ -1019,7 +1035,7 @@ local actions = {
 					s_hp = min(3, s_hp + 1)
 
 		end,
-		info = "Divine Toll w/Expurgation DOT up for t31 2pc",
+		info = "Divine Toll w/ Expurgation to trigger Wrathful Sanction (T31 2pc)",
 	},
 
 }
@@ -1089,6 +1105,7 @@ local function GetStatus()
 	s_buff_FinalVerdict = GetBuff(ln_buff_FinalVerdict)
 	s_buff_ds = GetBuff(ln_buff_ds)
 	s_buff_Crusade = GetBuff(ln_buff_Crusade)
+	s_buff_EchoesOfWrath = GetBuff(ln_buff_EchoesOfWrath)
 
 	-- the debuffs
 	s_debuff_Judgment = GetDebuff(ln_debuff_Judgment)
@@ -1228,6 +1245,7 @@ function xmod.Rotation()
 	s_buff_FinalVerdict = max(0, s_buff_FinalVerdict - s_otime)
 	s_buff_ds = max(0, s_buff_ds - s_otime)
 	s_buff_Crusade = max(0, s_buff_Crusade - s_otime)
+	s_buff_EchoesOfWrath = max(0, s_buff_EchoesOfWrath - s_otime)
 
 	-- the debuffs
 	s_debuff_Judgment = max(0, s_debuff_Judgment - s_otime)
@@ -1275,7 +1293,6 @@ function xmod.Rotation()
 		s_JudgmentCharges = s_JudgmentCharges - 1
 
 	end
-
 
 	---------------
 
