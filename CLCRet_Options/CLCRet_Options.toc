@@ -1,4 +1,4 @@
-## Interface: 100200
+## Interface: 100207
 ## Title: |cffF58CBACLCRet Options|r
 ## Notes: A LoD option menu for CLCRet
 ## Author: Trukarak-Blackwater Raiders
