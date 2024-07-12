@@ -88,7 +88,7 @@ function abgs:SpellGet()
 	if (db.auras[i].data.exec == "AuraButtonExecItemVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecItemVisibleNoCooldown") then
 		return db.auras[i].data.spell
 	elseif db.auras[i].data.exec == "AuraButtonExecICDItem" then
-		return GetSpellInfo(db.auras[i].data.spell)
+		return C_Spell.GetSpellInfo(db.auras[i].data.spell)
 	end
 	return db.auras[i].data.spell
 end
@@ -98,7 +98,7 @@ function abgs:SpellSet(val)
 	
 	-- skill
 	if (db.auras[i].data.exec == "AuraButtonExecSkillVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleNoCooldown") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleOnCooldown") then
-		local name = GetSpellInfo(val)
+		local name = C_Spell.GetSpellInfo(val)
 		if name then
 			db.auras[i].data.spell = name
 		else
@@ -121,7 +121,7 @@ function abgs:SpellSet(val)
 	-- icd stuff
 	elseif (db.auras[i].data.exec == "AuraButtonExecICDItem") then
 		local tid = tonumber(val)
-		local name = GetSpellInfo(tid)
+		local name = C_Spell.GetSpellInfo(tid)
 		if name then
 			db.auras[i].data.spell = tid
 		else
@@ -419,37 +419,6 @@ local options = {
 						clcret:CenterHorizontally()
 					end,
 				},
-				
-				__icd = {
-					order = 50,
-					type = "header",
-					name = "ICD Visibility",
-				},
-				____icd = {
-					order = 51,
-					type = "description",
-					name = "Controls the way ICD Aura Buttons are displayed while the proc is ready or on cooldown.",
-				},
-				icdReady = {
-					order = 52,
-					type = "select",
-					name = "Ready",
-					values = { [1] = "Visible", [2] = "Faded", [3] = "Invisible" },
-					get = function(info) return db.icd.visibility.ready end,
-					set = function(info, val)
-						db.icd.visibility.ready = val
-					end,
-				},
-				icdCooldown = {
-					order = 53,
-					type = "select",
-					name = "On cooldown",
-					values = { [1] = "Visible", [2] = "Faded", [3] = "Invisible" },
-					get = function(info) return db.icd.visibility.cd end,
-					set = function(info, val)
-						db.icd.visibility.cd = val
-					end,
-				}
 			},
 		},
 	
@@ -749,5 +718,5 @@ options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(clcret.db)
 options.args.profiles.order = 900
 LibStub("AceConfigDialog-3.0"):AddToBlizOptions("CLCRet", "Profiles", "CLCRet", "profiles")
 
-InterfaceOptionsFrame_OpenToCategory("CLCRet")
+Settings.OpenToCategory("CLCRet")
 

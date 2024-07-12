@@ -14,12 +14,16 @@ local borderType = {
 	"Interface\\AddOns\\clcret\\textures\\border_heavy"				-- heavy
 }
 
+local spellInfo = C_Spell.GetSpellInfo
 local dq = { 85256, 85256 }
 local nq = {}
-nq[1] = GetSpellInfo(85256)
-nq[2] = GetSpellInfo(85256)
 
-local csname = GetSpellInfo(35395)
+spellInfo = C_Spell.GetSpellInfo
+
+nq[1] = spellInfo(85256)
+nq[2] = spellInfo(85256)
+
+local csname = spellInfo(35395)
 
 -- main and secondary skill buttons
 -- smartsvn test
@@ -40,11 +44,6 @@ clcret.locked = true				-- main frame locked
 
 -- shortcut for db options
 local db
-
---[[
-clcret.auraButtons = auraButtons
-clcret.icd = icd
---]]
 
 local strataLevels = {
 	"BACKGROUND",
@@ -78,19 +77,6 @@ local defaults = {
 		fullDisable = false,
 		strata = 3,
 		grayOOM = false,
-		
-		-- paladin power bar
-		adjustHPBar = true,
-		hideBlizPPB = false,
-		ppbX = 0,
-		ppbY = 0,
-		ppbScale = 1,
-		ppbAlpha = 1,
-		
-		lbf = {
-			Skills = {},
-			Auras = {},
-		},
 		
 		-- icd
 		icd = {
@@ -188,10 +174,16 @@ function clcret:ProfileChanged(db, sourceProfile)
 	-- relink 
 	ReloadUI()
 end
+
 -- load if needed and show options
 local function ShowOptions()
-	if not clcret.optionsLoaded then LoadAddOn("CLCRet_Options") end
-	InterfaceOptionsFrame_OpenToCategory("CLCRet")
+
+	if not clcret.optionsLoaded then 
+		C_AddOns.LoadAddOn("CLCRet_Options") 
+	end
+	
+	Settings.OpenToCategory("CLCRet")
+
 end
 local function CmdLinePrio(args)
 	clcret.db.profile.rotation.prio = args
@@ -211,10 +203,7 @@ end
 function clcret:QUEST_LOG_UPDATE()
 	self:UnregisterEvent("QUEST_LOG_UPDATE")
 	-- test if it's a paladin or not
-	
-	-- get player name for sov tracking 
-	--playerName = UnitName("player")
-	
+
 	self.CheckQueue = self.DoNothing
 	
 	self.LBF = LibStub('LibButtonFacade', true)
@@ -226,16 +215,18 @@ function clcret:QUEST_LOG_UPDATE()
 	-- blank options page for title
 	local optionFrame = CreateFrame("Frame", nil, UIParent)
 	optionFrame.name = "CLCRet"
-	-- local optionFrameLoad = CreateFrame("Button", nil, optionFrame, "UIPanelButtonTemplate")
-	-- optionFrameLoad:SetWidth(150)
-	-- optionFrameLoad:SetHeight(22)
-	-- optionFrameLoad:SetText("Load Options")
-	-- optionFrameLoad:SetPoint("TOPLEFT", 20, -20)
-	-- optionFrameLoad:SetScript("OnClick", ShowOptions)
-	-- InterfaceOptions_AddCategory(optionFrame)
+	local optionFrameLoad = CreateFrame("Button", nil, optionFrame, "UIPanelButtonTemplate")
+	optionFrameLoad:SetWidth(150)
+	optionFrameLoad:SetHeight(22)
+	optionFrameLoad:SetText("Load Options")
+	optionFrameLoad:SetPoint("TOPLEFT", 20, -20)
+	optionFrameLoad:SetScript("OnClick", ShowOptions)
+
 	-- chat command that points to our category
 	self:RegisterChatCommand("clcret", ShowOptions)
 	self:RegisterChatCommand("clcretlp", CmdLinePrio)
+	self:RegisterChatCommand("rl", ReloadUI)
+	
 	
 	self:UpdateEnabledAuraButtons()
 	
@@ -399,13 +390,15 @@ function clcret:AuraButtonExecSkillVisibleAlways()
 	
 	button:Show()
 	
-	if IsUsableSpell(data.spell) then
+	if C_Spell.IsSpellUsable(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
 	end
 	
-	local start, duration = GetSpellCooldown(data.spell)
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
+	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+	
 	if duration and duration > 0 then
 		button.cooldown:SetCooldown(start, duration)
 	end
@@ -423,9 +416,10 @@ function clcret:AuraButtonExecSkillVisibleNoCooldown()
 		button.texture:SetTexture(GetSpellTexture(data.spell))
 	end
 
-	local start, duration = GetSpellCooldown(data.spell)
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
+	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
 	
-	if IsUsableSpell(data.spell) then
+	if C_Spell.IsSpellUsable(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
@@ -450,7 +444,8 @@ function clcret:AuraButtonExecSkillVisibleOnCooldown()
 		button.texture:SetTexture(GetSpellTexture(data.spell))
 	end
 
-	local start, duration = GetSpellCooldown(data.spell)
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
+	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
 	
 	if duration and duration > 1.5 then
 		button:Show()
@@ -544,8 +539,10 @@ function clcret:AuraButtonExecICDItem()
 	local button = auraButtons[index]
 	local data = icd.data[index]
 	
+	spellInfo = C_Spell.GetSpellInfo
+	
 	if not button.hasTexture then
-		local _, _, tex = GetSpellInfo(data.id)
+		local _, _, tex = spellInfo(data.id)
 		button.texture:SetTexture(tex)
 		button.hasTexture = true
 	end
@@ -687,10 +684,13 @@ function clcret:UpdateUI()
 	-- queue
 	for i = 1, 2 do
 		local button = buttons[i]
-		local _, _, texture = GetSpellInfo(dq[i])
+		local spellInfo = C_Spell.GetSpellInfo
+		local texture = C_Spell.GetSpellTexture(dq[i])
 		button.texture:SetTexture(texture)
 		
-		local start, duration = GetSpellCooldown(dq[i])
+		local spellCooldownInfo = C_Spell.GetSpellCooldown(dq[i])
+		local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+		
 		if duration and duration > 0 then
 			button.cooldown:Show()
 			button.cooldown:SetCooldown(start, duration)
@@ -699,7 +699,7 @@ function clcret:UpdateUI()
 		end
 		
 		if db.grayOOM then
-			local _, nomana = IsUsableSpell(nq[i])
+			local _, nomana = C_Spell.IsSpellUsable(213644)
 			if nomana then 
 				button.texture:SetVertexColor(0.3, 0.3, 0.3, 0.3)
 			else
@@ -715,15 +715,13 @@ end
 -- melee range check
 function clcret:CheckRange()
 	local range
+	local inRange = C_Spell.IsSpellInRange
+	
 	if db.rotation.rangePerSkill then
 		-- each skill shows the range of the ability
+		inRange = C_Spell.IsSpellInRange
 		for i = 1, 2 do
-			-- special case for mexo
-			if dq[i] == 122032 then
-				range = IsSpellInRange(csname, "target")
-			else
-				range = IsSpellInRange(nq[i], "target")
-			end
+				range = inRange(nq[i], "target")
 			if range ~= nil and range == 0 then
 				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
 			else
@@ -732,7 +730,8 @@ function clcret:CheckRange()
 		end
 	else
 		-- both skills show melee range
-		range = IsSpellInRange(csname, "target")	
+		inRange = C_Spell.IsSpellInRange
+		range = inRange(35395, "target")	
 		if range ~= nil and range == 0 then
 			for i = 1, 2 do
 				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
@@ -760,8 +759,10 @@ end
 function clcret:CheckQueueRet()
 	dq[1], dq[2] = clcret.RetRotation()
 	
-	nq[1] = GetSpellInfo(dq[1])
-	nq[2] = GetSpellInfo(dq[2])
+	spellInfo = C_Spell.GetSpellInfo
+	
+	nq[1] = spellInfo(dq[1])
+	nq[2] = spellInfo(dq[2])
 	self:UpdateUI()
 end
 -- ---------------------------------------------------------------------------------------------------------------------
@@ -1136,13 +1137,14 @@ function clcret:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideC
 	-- icd logic
 	if destName == playerName and icd.spells[spellId] then
 		local i = icd.spells[spellId]
+			spellInfo = C_Spell.GetSpellInfo
 		if ceAuraApplied[combatEvent] then
 			icd.data[i].start = GetTime()
 			icd.data[i].cd = floor(icd.data[i].start - icd.data[i].last + 0.5)
 			icd.data[i].last = icd.data[i].start
 			-- check if it's a smaller cd than the one used
 			if icd.data[i].start > 0 and icd.data[i].cd < icd.data[i].durationICD then
-				print("clcret:", "Warning: " .. spellId .. "(" .. GetSpellInfo(spellId) .. ") activated after " .. icd.data[i].cd .. " seconds and specified ICD is " .. icd.data[i].durationICD .. " seconds.")
+				print("clcret:", "Warning: " .. spellId .. "(" .. spellInfo(spellId) .. ") activated after " .. icd.data[i].cd .. " seconds and specified ICD is " .. icd.data[i].durationICD .. " seconds.")
 			end
 			-- save min cd
 			if icd.data[i].cd < icd.data[i].mincd then icd.data[i].mincd = icd.data[i].cd end

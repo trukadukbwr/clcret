@@ -1,91 +1,3 @@
--- Pulls back the Addon-Local Variables and store them locally.
-local addonName, addonTable = ...;
-local addon = _G[addonName];
-
--- Store local copies of Blizzard API and other addon global functions and variables
-local GetBuildInfo = GetBuildInfo;
-local select, setmetatable, table, type, unpack = select, setmetatable, table, type, unpack;
-
-addonTable.CURRENT_WOW_VERSION = select(4, GetBuildInfo());
-
-local Prototype = {
-
-
-	-- API Version History
-	-- 8.0 - Dropped second parameter (nameSubtext).
-	--     - Also, no longer supports querying by spell name.
-	UnitBuff = function(...)
-		if addonTable.CURRENT_WOW_VERSION >= 80000 then
-			local unitID, ID = ...;
-
-			if type(ID) == "string" then
-				for counter = 1, 40 do
-					local auraName = UnitBuff(unitID, counter);
-
-					if ID == auraName then
-						return UnitBuff(unitID, counter);
-					end
-				end
-			end
-		else
-			local parameters = { UnitBuff(...) };
-
-			table.insert(parameters, 2, "dummyReturn");
-
-			return unpack(parameters);
-		end
-	end,
-
-	-- API Version History
-	-- 8.0 - Dropped second parameter (nameSubtext).
-	--     - Also, no longer supports querying by spell name.
-	UnitDebuff = function(...)
-		if addonTable.CURRENT_WOW_VERSION >= 80000 then
-			local unitID, ID = ...;
-
-			if type(ID) == "string" then
-				for counter = 1, 40 do
-					local auraName = UnitDebuff(unitID, counter);
-
-					if ID == auraName then
-						return UnitDebuff(unitID, counter);
-					end
-				end
-			end
-		else
-			local parameters = { UnitDebuff(...) };
-
-			table.insert(parameters, 2, "dummyReturn");
-
-			return unpack(parameters);
-		end
-	end,
-
-};
-
-local MT = {
-	__index = function(table, key)
-		local classPrototype = Prototype[key];
-
-		if classPrototype then
-			if type(classPrototype) == "function" then
-				return function(...)
-					return classPrototype(...);
-				end
-			else
-				return classPrototype;
-			end
-		else
-			return function(...)
-				return _G[key](...);
-			end
-		end
-	end,
-};
-
-APIWrapper = setmetatable({}, MT);
-
-
 -- don't load if class is wrong
 local _, class = UnitClass("player")
 if class ~= "PALADIN" then return end
@@ -109,7 +21,7 @@ if clcInfo then debug = clcInfo.debug end
 xmod.version = 9000001
 xmod.defaults = {
 	version = xmod.version,
-	prio = "es ts2_exp fr tv5 ds_s tv ds woa boj2 boj how_aw how dt how j ts2 cs cons",
+	prio = "es dh hol ds ts2_exp fr tv5 ds_s woa tv how_aw bojx dtx boj2 jx cs2 cs ts2 ts1 boj how j cons",
 	rangePerSkill = false,
 	howclash = 0, -- priority time for hammer of wrath
 	csclash = 0, -- priority time for cs
@@ -121,67 +33,60 @@ local idGCD = 85256 -- tv for gcd
 
 -- spells
 local idTemplarsVerdict = 85256
+local idJusticarsVengeance = 215661
+local idWakeOfAshes = 255937
 local idCrusaderStrike = 35395
 local idJudgment = 20271
 local idConsecration = 26573
-local idJusticarsVengeance = 215661
-local idWakeOfAshes = 255937
-local idExecutionSentence = 343527
-local idHammerOfJustice = 853
 local idDivineStorm = 53385
-local idArcaneTorrent = 155145
-local idHoW = 24275
+local idHammerOfWrath = 24275
 local idBladeOfJustice = 184575
-local idDivineStorm = 53385
-local idAvengingWrath = 31884
+local idExecutionSentence = 343527
 local idFinalReckoning = 343721
-local idJusticarsVengeance = 215661
-local idSanctify = 382536
+local idHammerOfLight = 427453
+local idHammerOfLightDummy = 429826
 
--- talents, Generate 2 Holy Power
-local idBoJ2 = 383342
-local idJudgment2 = 405278
-local idHoW2 = 383314
+-- racials
+local idArcaneTorrent = 155145
+local idLightsJudgment = 255647
+
+-- Talents
+-- ids for talent spells
 local idTemplarStrike = 407480
 local idTemplarSlash = 406647
 local idDivineHammer = 198034
+local idSanctify = 382536
+local idDivineToll = 375576
+local idExpurgation = 383344
 
--- talents, makes passive
+-- adds charges to spells; ids for actual talents
+local idBladeOfJustice2 = 383342
+local idJudgment2 = 405278
+local idHammerOfWrath2 = 383314
+
+-- makes passive
 local idCrusadingStrikes = 404542
 local idConsecratedBlade = 404834
 
--- talents, Holy Power Costs
+-- modify holy power costs
 local idDivineAuxiliary = 406158
-local idVanguard = 406545
 local idDivinePurpose = 408459
 
--- ------------------------
--- ---Covenant Abilities---
--- ------------------------
-local idToll = 375576
-
--- ------
 -- buffs
--- ------
-local ln_buff_aow = GetSpellInfo(281178)
-local ln_buff_DivinePurpose = GetSpellInfo(223819)
-local ln_buff_ds2 = GetSpellInfo(326733)
-local ln_buff_aw = GetSpellInfo(31884)
-local ln_buff_FinalVerdict = GetSpellInfo(383329)
-local ln_buff_ds = GetSpellInfo(387178)
-local ln_buff_Crusade = GetSpellInfo(231895)
-local ln_buff_EchoesOfWrath = GetSpellInfo(423590)
+-- /dump C_UnitAuras.GetBuffDataByIndex("Player", 1)
+-- /dump C_UnitAuras.GetDebuffDataByIndex("Target", 1)
+-- /etrace for combat log search/pause
 
--- debuffs
-local ln_debuff_Judgment = GetSpellInfo(197277)
-local ln_debuff_Exec = GetSpellInfo(343527)
-local ln_debuff_FinalReckoning = GetSpellInfo(343721)
-local ln_debuff_Sanctify = GetSpellInfo(382538)
-local ln_debuff_Expurgation = GetSpellInfo(383346)
-
--- buffs/debuffs
-local s_buff_aow, s_buff_DivinePurpose, s_buff_ds2, s_buff_aw, s_buff_FinalVerdict, s_buff_ds, s_buff_Crusade, s_buff_EchoesOfWrath
-local s_debuff_Judgment, s_debuff_ExecutionSentence, s_debuff_FinalReckoning, s_debuff_Sanctify, s_debuff_Expurgation
+local idAvengingWrath = 31884
+local idCrusade = 231895
+local idArtOfWar = 281178
+local idDivinePurpose = 408458
+local idFinalVerdictHOW = 383329
+local idEmpyreanLegacyTV = 387178
+local idEmpyreanPowerDS = 326733
+local idBlessingOfAnshe = 445206
+local idForWhomTheBellTolls = 433618
+local idEchoesOfWrath = 423590
 
 -- status vars
 local s1, s2
@@ -199,20 +104,22 @@ local qn = {} -- normal queue
 local q -- working queue
 
 local function GetCooldown(id)
-	local start, duration = GetSpellCooldown(id)
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(id)
+	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+	
 	if start == nil then return 100 end
 	local cd = start + duration - s_ctime - s_gcd
 	if cd < 0 then return 0 end
 	return cd
 end
 
-
 -- ----------------
 -- Spell Charges --
 -- ----------------
 
 local function GetCSData()
-	local charges, maxCharges, start, duration = GetSpellCharges(idCrusaderStrike)
+	local chargeInfo = C_Spell.GetSpellCharges(idCrusaderStrike)
+	local charges, maxCharges = chargeInfo.currentCharges, chargeInfo.maxCharges;
 	if (charges >= 2) then
 		return 0, 2
 	end
@@ -229,7 +136,8 @@ local function GetCSData()
 end
 
 local function GetHoWData()
-	local charges, maxCharges, start, duration = GetSpellCharges(idHoW)
+	local chargeInfo = C_Spell.GetSpellCharges(idHammerOfWrath)
+	local charges, maxCharges = chargeInfo.currentCharges, chargeInfo.maxCharges;
 	if (charges >= 2) then
 		return 0, 2
 	end
@@ -246,7 +154,8 @@ local function GetHoWData()
 end
 
 local function GetBoJData()
-	local charges, maxCharges, start, duration = GetSpellCharges(idBladeOfJustice)
+	local chargeInfo = C_Spell.GetSpellCharges(idBladeOfJustice)
+	local charges, maxCharges = chargeInfo.currentCharges, chargeInfo.maxCharges;
 	if (charges >= 2) then
 		return 0, 2
 	end
@@ -263,7 +172,8 @@ local function GetBoJData()
 end
 
 local function GetJudgmentData()
-	local charges, maxCharges, start, duration = GetSpellCharges(idJudgment)
+	local chargeInfo = C_Spell.GetSpellCharges(idJudgment)
+	local charges, maxCharges = chargeInfo.currentCharges, chargeInfo.maxCharges;
 	if (charges >= 2) then
 		return 0, 2
 	end
@@ -281,145 +191,67 @@ end
 
 -- -------------------
 -- s_hp = min(3, s_hp + 2) is telling the addon what hp you need to reach for tv
--- /dump UnitBuff("Player", 1)
--- /dump UnitDebuff("Target", 1)
+
+-- /dump C_UnitAuras.GetBuffDataByIndex("Player", 1)
+-- /dump C_UnitAuras.GetDebuffDataByIndex("Target", 1)
+
+-- IsSpellOverlayed() -- used to check if it's glowing overlay is active
 -- IsSpellKnownOrOverridesKnown()
--- (not(IsUsableSpell(id )))
--- IsPlayerSpell  -- to check for talent
--- IsUsableSpell(383469) wont return true unless theres holy power
+-- C_Spell.IsSpellUsable()
+-- C_Spell.GetSpellCooldown()
+-- IsPlayerSpell() -- use this one to check for talent spells in the tree
+
 -- costs = GetSpellPowerCost(255937)	
--- Do NOT put a check for "GetSpellCooldown(SpellID or Addon Shorthand)" in code, it will cause issues with GCD and displaying it as current recommendation
--- -------------------------------------------------------------------------------
+
+-- (OLD) Do NOT put a check for "GetSpellCooldown(SpellID or Addon Shorthand)" in code, it will cause issues with GCD and displaying it as current recommendation
+-- -------------------
 
 -- actions ---------------------------------------------------------------------
 local actions = {
 
-	--Arcane Torrent
-	arc = {
-		id = idArcaneTorrent,
+	-- ------
+	-- ------
+	-- Blade of Justice to apply Expurg
+	-- Note; No need to check for charges if they don't matter. Just bloated code.
+	-- Note; Remove expurgation check after Xpac is over
+	-- REMOVE TIER SET BUFF STRINGS AFTER PREPATCH. REMOVE FROM DEFAULT STRING AFTER PREPATCH.
+	bojx = {
+		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idArcaneTorrent) and (s_hp <= 2) and IsSpellKnownOrOverridesKnown(idArcaneTorrent) then
-				return GetCooldown(idArcaneTorrent)
-			end
-			return 100
-		end,
-			UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			
-					s_hp = min(3, s_hp + 1)
 
-		end,
-		info = "Arcane Torrent",
-	},
+			-- local strings for less confusing code
 
-	--Consecration
-	cons = {
-		id = idConsecration,
-		GetCD = function()
-			if (s1 ~= idConsecration) and IsSpellKnownOrOverridesKnown(idConsecration) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idConsecratedBlade))) and (not(IsPlayerSpell(idDivineHammer))) then
-				return GetCooldown(idConsecration)
+			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(C_Spell.IsSpellUsable(idTemplarsVerdict))) and (not(s_debuff_Expurgation)) then
+				return GetCooldown(idBladeOfJustice)
 			end
-			
-			if (s1 ~= idConsecration) and IsSpellKnownOrOverridesKnown(idConsecration) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idConsecratedBlade))) and IsPlayerSpell(idDivineHammer) then
-				return GetCooldown(idDivineHammer)
-			end
-			
 			return 100
 		end,
 		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
-
-		end,
-		info = "Consecration",
-	},
-
-	-- ----------------------------------
-	-- Holy Power Generators
-	-- ----------------------------------
-	
-	woa = {
-		id = idWakeOfAshes,
-		GetCD = function()
-			if (s1 ~= idWakeOfAshes) and IsSpellKnownOrOverridesKnown(idWakeOfAshes) and (s_hp < 3) and IsUsableSpell(idWakeOfAshes) then
-					return GetCooldown(idWakeOfAshes)
-			end
-			return 100
-		end,
-			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-			
-			-- we need to trick the addon so it doesn't suggest a 3HoPo fr along with WoA and overcap HoPo
-				if IsPlayerSpell(idDivineAuxiliary) then
-					s_hp = max(3, s_hp + 3)
-				else
-					s_hp = min(3, s_hp + 3)
-				end
-				
-		end,
-		info = "Wake Of Ashes",
-	},
 
-	-- Judgment
-	j = {
-		id = idJudgment,
-		GetCD = function()
-			if (s1 ~= idJudgment) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
-				return GetCooldown(idJudgment)
-			end
-			return 100
-		end,
-			UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			s_debuff_Judgment = 8
-				
-				if IsPlayerSpell(idJudgment2) then
+				if IsPlayerSpell(idBladeOfJustice2) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
-				
-				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
+
+			s_BoJCharges = max(0, s_BoJCharges - 1)
 
 		end,
-		info = "Judgment",
+		info = "Blade of Justice to apply initial Expurgation DoT",
 	},
-
-	--Judgment 2 charges
-	j2 = {
-		id = idJudgment,
-		GetCD = function()
-			if (s1 ~= idJudgment) and (s_JudgmentCharges == 2) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Judgment < 2) then
-				return GetCooldown(idJudgment)
-			end
-			return 100
-		end,
-			UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			s_debuff_Judgment = 8
-				
-				if IsPlayerSpell(idJudgment2) then
-					s_hp = min(3, s_hp + 2)
-				else
-					s_hp = min(3, s_hp + 1)
-				end
-				
-				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
-
-		end,
-		info = "Judgment at 2 Stacks (TALENT)",
-	},
-
+	-- REMOVE AFTER PREPATCH Judgment to trigger Wrathful Sanction (T31 4Pc)
 	jx = {
 		id = idJudgment,
 		GetCD = function()
-			if (s1 ~= idJudgment) and IsSpellKnownOrOverridesKnown(idJudgment) and (s_debuff_Expurgation > 1) and (s_buff_EchoesOfWrath < 1) then
+			if (s1 ~= idJudgment) and IsSpellKnownOrOverridesKnown(idJudgment) and s_debuff_Expurgation and s_buff_EchoesOfWrath then
 				return GetCooldown(idJudgment)
 			end
 			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-			s_debuff_Judgment = 8
+			-- s_debuff_Judgment = 8
 				
 				if IsPlayerSpell(idJudgment2) then
 					s_hp = min(3, s_hp + 2)
@@ -432,374 +264,604 @@ local actions = {
 		end,
 		info = "Judgment to trigger Wrathful Sanction (T31 4Pc)",
 	},
-
-	--Crusader Strike; templar strike 1st part combo
-	ts1 = {
-		id = idCrusaderStrike,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100
-			end
-			
-			if (s1 ~= idCrusaderStrike) and (s_hp < 5) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsPlayerSpell(406646) and (not(IsSpellKnownOrOverridesKnown(idTemplarSlash))) then
-				return 0
-			end
-			return cd + 0.5
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-
-			s_hp = min(3, s_hp + 1)
-			
-			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-			
-		end,
-		info = "Templar Strike (1st Part of Crusader Strike Combo)(TALENT)",
-	},
-
-	--Crusader Strike; templar strike 2nd part combo
-	ts2 = {
-		id = idCrusaderStrike,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100
-			end
-			
-			if (s1 ~= idCrusaderStrike) and (s_hp < 5) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsSpellKnownOrOverridesKnown(idTemplarSlash) then
-				return 0
-			end
-			return cd + 0.5
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 0
-
-			s_hp = min(3, s_hp + 1)
-			
-			-- s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-			
-		end,
-		info = "Templar Slash (2nd Part of Crusader Strike Combo)(TALENT)",
-	},
-
-	--Crusader Strike; templar strike 2nd part combo, about to expire
-	ts2_exp = {
-		id = idCrusaderStrike,
-		GetCD = function()
-			local tscd = select(3, GetSpellCharges(407480))
-			local tscdexpiring = ((GetTime() > ((tscd) + 2)) and (GetTime() < ((tscd) + 4)))
-			local cd, charges = GetCSData()
-			
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100
-			end
-			
-			if (s1 ~= idCrusaderStrike) and (not(IsPlayerSpell(idCrusadingStrikes))) and IsSpellKnownOrOverridesKnown(idTemplarSlash) and tscdexpiring then
-				return 0
-			end
-			return cd + 0.5
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 0
-
-			s_hp = min(3, s_hp + 1)
-			
-			-- s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-			
-		end,
-		info = "Templar Slash Combo(TALENT) about to expire",
-	},
-
-	--Crusader Strike
-	cs = {
-		id = idCrusaderStrike,
-		GetCD = function()
-			local cd, charges = GetCSData()
-			
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100
-			end
-			
-			if (s1 ~= idCrusaderStrike) and ((s_CrusaderStrikeCharges == 1) or (s_CrusaderStrikeCharges == 2)) and (s_hp < 3) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idCrusadingStrikes))) then
-				return 0
-			end
-			return cd + 0.5
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-
-			s_hp = min(3, s_hp + 1)
-			
-			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-			
-		end,
-		info = "Crusader Strike",
-	},
-
-	--Crusader Strike @ 2 charges
-	cs2 = {
-		id = idCrusaderStrike,
-		GetCD = function()
-		
-			if (s1 ~= idCrusaderStrike) and IsPlayerSpell(idCrusadingStrikes) then
-				return 100		
-			end
-			
-			if (s1 ~= idCrusaderStrike) and (s_CrusaderStrikeCharges == 2) and (s_hp < 3) and (not(IsUsableSpell(idTemplarsVerdict))) and (not(IsPlayerSpell(idCrusadingStrikes))) then
-				return 0
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-
-			s_hp = max(3, s_hp + 1)
-			
-			s_CrusaderStrikeCharges = max(0, s_CrusaderStrikeCharges - 1)
-
-		end,
-		info = "Crusader Strike at 2 Stacks",
-	},
 	
-	--Hammer of Wrath
-	how = {
-		id = idHoW,
+	-- REMOVE AFTER PREPATCH Divine Toll w/ expurg dot
+	dtx = {
+		id = idDivineToll,
 		GetCD = function()
-		local cd, charges = GetHoWData()
-			if (s1 ~= idHoW) and ((s_HoWCharges == 1) or (s_HoWCharges == 2)) and IsUsableSpell(idHoW) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				return GetCooldown(idHoW)
+
+			if (s1 ~= idDivineToll) and IsPlayerSpell(idDivineToll) and s_debuff_Expurgation then
+				return GetCooldown(idDivineToll)	
 			end
 			return 100
 		end,
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
+			-- s_debuff_Judgment = 8
+			
+					s_hp = min(3, s_hp + 1)
 
-				if IsPlayerSpell(idHoW2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
+		end,
+		info = "Divine Toll w/ Expurgation to trigger Wrathful Sanction (T31 2pc)",
+	},
+
+	-- ------------- 
+	-- ---------
+
+
+	-- Arcane Torrent
+	arc = {
+		id = idArcaneTorrent,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			knownAT = IsSpellKnownOrOverridesKnown(idArcaneTorrent)
+			
+			if (s1 ~= idArcaneTorrent) and (s_hp <= 2) and knownAT then
+				return GetCooldown(idArcaneTorrent)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			
+					s_hp = min(3, s_hp + 1)
+		end,
+		
+		info = "Arcane Torrent (Blood Elf)",
+	},
+	
+	-- Light's Judgment 
+	lj = {
+		id = idLightsJudgment,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			knownLJ = IsSpellKnownOrOverridesKnown(idLightsJudgment)
+			
+			if (s1 ~= idLightsJudgment) and knownLJ then
+				return GetCooldown(idLightsJudgment)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+		end,
+		
+		info = "Light's Judgment (Lightforged Draenei)",
+	},
+	
+	-- Consecration
+	cons = {
+		id = idConsecration,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			playerSpellConsecratedBlade = IsPlayerSpell(idConsecratedBlade)
+			playerSpellDivineHammer = IsPlayerSpell(idDivineHammer)
+		
+			if (s1 ~= idConsecration) and knownCONS and (not(usableTV)) and (not(playerSpellConsecratedBlade)) and (not(playerSpellDivineHammer)) then
+				return GetCooldown(idConsecration)
+			end
+			
+			if (s1 ~= idConsecration) and knownCONS and (not(usableTV)) and (not(playerSpellConsecratedBlade)) and playerSpellDivineHammer then
+				return GetCooldown(idDivineHammer)
+			end			
+				return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
+		end,
+		
+		info = "Consecration",
+	},
+
+	-- ----------------------------------
+	-- Holy Power Generators
+	-- ----------------------------------
+	
+	-- Wake of Ashes
+	woa = {
+		id = idWakeOfAshes,
+		GetCD = function()
+			
+			-- local strings for less confusing code
+			knownWOA = IsSpellKnownOrOverridesKnown(idWakeOfAshes)
+			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
+			knownDivineHammer = IsPlayerSpell(idDivineHammer)
+			
+			s_cd_DH = GetCooldown(idDivineHammer)
+			inactive_DH = ((s_cd_DH < 105))  -- divine hammer WAS up, on CD, NOT spinning
+			active_DH = (s_cd_DH > 105) -- divine hammer is UP, on CD, Spinning
+			DivineHammerCheck3 = ((knownDivineHammer and inactive_DH and (s_cd_DH > 1)) or (not(knownDivineHammer)))
+			DivineHammerCheck4 = (knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 109)
+			
+			if (s1 ~= idWakeOfAshes) and knownWOA and usableWOA and (DivineHammerCheck3 or DivineHammerCheck4) then
+					return GetCooldown(idWakeOfAshes)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			
+			-- we need to trick the addon so it doesn't suggest a 3HoPo fr along with WoA and overcap HoPo
+				if IsPlayerSpell(idDivineAuxiliary) then
+					s_hp = max(3, s_hp + 3)
+				else
+					s_hp = min(3, s_hp + 3)
+				end				
+		end,
+		
+		info = "Wake Of Ashes",
+	},
+
+	-- Judgment
+	j = {
+		id = idJudgment,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			knownJ = IsSpellKnownOrOverridesKnown(idJudgment)
+			usableHOL = C_Spell.IsSpellUsable(idHammerOfLight)
+		
+			local cd, charges = GetJudgmentData()
+			
+			if (s1 ~= idJudgment) and knownJ and not(usableHOL) then
+				return GetCooldown(idJudgment)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+				
+				if IsPlayerSpell(idJudgment2) then
+					s_hp = max(3, s_hp + 2)
+				else
+					s_hp = max(3, s_hp + 1)
+				end
+				
+				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
+		end,
+		
+		info = "Judgment",
+	},
+
+	-- Judgment 2 charges
+	j2 = {
+		id = idJudgment,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			knownJ = IsSpellKnownOrOverridesKnown(idJudgment)
+			usableHOL = C_Spell.IsSpellUsable(idHammerOfLight)
+		
+			local cd, charges = GetJudgmentData()
+		
+			if (s1 ~= idJudgment) and (s_JudgmentCharges == 2) and knownJ and not(usableHOL) then
+				return GetCooldown(idJudgment)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+				
+				if IsPlayerSpell(idJudgment2) then
+					s_hp = min(3, s_hp + 2)
+				else
+					s_hp = min(3, s_hp + 1)
+				end
+				
+				s_JudgmentCharges = max(2, s_JudgmentCharges - 1)
+		end,
+		
+		info = "Judgment at 2 Stacks (TALENT)",
+	},
+
+	-- Crusader Strike
+	cs = {
+		id = idCrusaderStrike,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			CrusadingStrikes = IsPlayerSpell(idCrusadingStrikes)
+			TemplarStrikesTalent = IsPlayerSpell(406646)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			
+			local cd, charges = GetCSData()
+			
+			if (s1 ~= idCrusaderStrike) and CrusadingStrikes then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and (s_hp < 3) and ((s_CrusaderStrikeCharges == 1) or (s_CrusaderStrikeCharges == 2)) and not(CrusadingStrikes) and not(TemplarStrikesTalent) then
+				return 0
+			end	
+			
+			return 100		
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+			s_hp = min(3, s_hp + 1)
+			
+			s_CrusaderStrikeCharges = max(2, s_CrusaderStrikeCharges - 1)		
+		end,
+		
+		info = "Crusader Strike",
+	},
+
+	-- Crusader Strike @ 2 charges
+	cs2 = {
+		id = idCrusaderStrike,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			CrusadingStrikes = IsPlayerSpell(idCrusadingStrikes)
+			TemplarStrikesTalent = IsPlayerSpell(406646)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+		
+			local cd, charges = GetCSData()
+		
+			if (s1 ~= idCrusaderStrike) and CrusadingStrikes then
+				return 100		
+			end
+			
+			if (s1 ~= idCrusaderStrike) and (s_hp < 3) and (s_CrusaderStrikeCharges == 2) and not(CrusadingStrikes) and not(TemplarStrikesTalent) then
+				return 0
+			end
+			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+			s_hp = max(3, s_hp + 1)
+			
+			s_CrusaderStrikeCharges = max(2, s_CrusaderStrikeCharges - 1)
+		end,
+		
+		info = "Crusader Strike at 2 Stacks",
+	},
+	
+	-- Templar strike 1st part combo
+	ts1 = {
+		id = idCrusaderStrike,
+		GetCD = function()
+			
+			-- local strings for less confusing code
+			CrusadingStrikes = IsPlayerSpell(idCrusadingStrikes)
+			TemplarStrikesTalent = IsPlayerSpell(406646)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			
+			if (s1 ~= idCrusaderStrike) and CrusadingStrikes then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and (s_hp < 5) and not(CrusadingStrikes) and TemplarStrikesTalent and (GetCooldown(idTemplarStrike) < 1) then
+				return 0
+			end
+			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+			s_hp = min(3, s_hp + 1)				
+		end,
+		
+		info = "Templar Strike (1st Part of Crusader Strike Combo)(TALENT)",
+	},
+	
+	-- Templar slash 2nd part combo
+	ts2 = {
+		id = idTemplarSlash,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			CrusadingStrikes = IsPlayerSpell(idCrusadingStrikes)
+			TemplarStrikesTalent = IsPlayerSpell(406646)
+			knownTSlash = IsSpellKnownOrOverridesKnown(idTemplarSlash)
+		
+			if (s1 ~= idCrusaderStrike) and CrusadingStrikes then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and (s_hp < 5) and not(CrusadingStrikes) and knownTSlash then
+				return 0
+			end
+			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 0
+
+			s_hp = min(3, s_hp + 1)			
+		end,
+		
+		info = "Templar Slash (2nd Part of Crusader Strike Combo)(TALENT)",
+	},
+
+	-- Templar slash 2nd part combo, about to expire
+	ts2_exp = {
+		id = idTemplarSlash,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			CrusadingStrikes = IsPlayerSpell(idCrusadingStrikes)
+			TemplarStrikesTalent = IsPlayerSpell(406646)
+			knownTSlash = IsSpellKnownOrOverridesKnown(idTemplarSlash)
+		
+			local chargeInfo = C_Spell.GetSpellCharges(407480)
+			local charges, maxCharges, StartTime = chargeInfo.currentCharges, chargeInfo.maxCharges, chargeInfo.cooldownStartTime;
+			local tscdexpiring = ((GetTime() > ((StartTime) + 3)) and (GetTime() < ((StartTime) + 5)))
+			local cd, charges = GetCSData()
+			
+			if (s1 ~= idCrusaderStrike) and CrusadingStrikes then
+				return 100
+			end
+			
+			if (s1 ~= idCrusaderStrike) and not(CrusadingStrikes) and knownTSlash and tscdexpiring then
+				return 0
+			end
+			
+			return 100
+		end,
+
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 0
+
+			s_hp = min(3, s_hp + 1)
+			
+		end,
+		
+		info = "Templar Slash Combo(TALENT) about to expire",
+	},
+	
+	-- Hammer of Wrath
+	how = {
+		id = idHammerOfWrath,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			usableHOW = C_Spell.IsSpellUsable(idHammerOfWrath)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			knownHOW = IsSpellKnownOrOverridesKnown(idHammerOfWrath)
+		
+		local cd, charges = GetHoWData()
+			if (s1 ~= idHammerOfWrath) and ((s_HoWCharges == 1) or (s_HoWCharges == 2)) and usableHOW and knownHOW then
+				return GetCooldown(idHammerOfWrath)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+
+				if IsPlayerSpell(idHammerOfWrath2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end	
 			
 			s_HoWCharges = max(0, s_HoWCharges - 1)
-
 		end,
+		
 		info = "Hammer of Wrath",
 	},
 
-	--Hammer of Wrath
+	-- Hammer of Wrath 2 charges (talent)
 	how2 = {
-		id = idHoW,
+		id = idHammerOfWrath,
 		GetCD = function()
+
+			-- local strings for less confusing code
+			usableHOW = C_Spell.IsSpellUsable(idHammerOfWrath)
+			knownHOW = IsSpellKnownOrOverridesKnown(idHammerOfWrath)
+
+		-- we don't use usableTV string since we want to HoW2 to go on cd and start recharging while we use TV
 		local cd, charges = GetHoWData()
-			if (s1 ~= idHoW) and (s_HoWCharges == 2) and IsUsableSpell(idHoW) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				return GetCooldown(idHoW)
+			if (s1 ~= idHammerOfWrath) and (s_HoWCharges == 2) and usableHOW and knownHOW then
+				return GetCooldown(idHammerOfWrath)
 			end
 			return 100
 		end,
-			UpdateStatus = function()
+		
+		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idHoW2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
+				if playerSpellHammerOfWrath2 and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
 			
-			s_HoWCharges = max(0, s_HoWCharges - 1)
-
+			s_HoWCharges = max(2, s_HoWCharges - 1)
 		end,
+		
 		info = "Hammer of Wrath at 2 Stacks (TALENT)",
 	},
 
-	--Hammer of Wrath w/ Avenging Wrath
+	-- Hammer of Wrath w/ Avenging Wrath
 	how_aw = {
-		id = idHoW,
+		id = idHammerOfWrath,
 		GetCD = function()
-			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and ((s_buff_aw > 1) or (s_buff_Crusade > 1)) and ((s_HoWCharges == 1) or (s_HoWCharges == 2)) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				return GetCooldown(idHoW)
+			local cd, charges = GetHoWData()
+		
+			-- local strings for less confusing code
+			awCheck = (s_buff_AvengingWrath or s_buff_Crusade or s_buff_BlessingOfAnshe)
+			knownHOW = IsSpellKnownOrOverridesKnown(idHammerOfWrath)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+		
+			-- we don't need usableHOW strings since HoW is always usable during AW
+			if (s1 ~= idHammerOfWrath) and ((s_HoWCharges == 1) or (s_HoWCharges == 2)) and awCheck and knownHOW then
+				return GetCooldown(idHammerOfWrath)
 			end
 			return 100
 		end,
-			UpdateStatus = function()
+		
+		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-
-				if IsPlayerSpell(idHoW2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
+				if playerSpellHammerOfWrath2 and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
 			
-			s_HoWCharges = max(0, s_HoWCharges - 1)
-			
+			s_HoWCharges = max(0, s_HoWCharges - 1)			
 		end,
+		
 		info = "Hammer of Wrath during Avenging Wrath",
 	},
 	
-		--Hammer of Wrath (2 charge talent) w/ Avenging Wrath 
+	-- Hammer of Wrath (2 charge talent) w/ Avenging Wrath 
 	how2_aw = {
-		id = idHoW,
+		id = idHammerOfWrath,
 		GetCD = function()
-			if (s1 ~= idHoW) and IsUsableSpell(idHoW) and ((s_buff_aw > 1) or (s_buff_Crusade > 1)) and (s_HoWCharges == 2) and IsSpellKnownOrOverridesKnown(idHoW) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				return GetCooldown(idHoW)
+		
+			-- local strings for less confusing code
+			awCheck = (s_buff_AvengingWrath or s_buff_Crusade or s_buff_BlessingOfAnshe)
+			knownHOW = IsSpellKnownOrOverridesKnown(idHammerOfWrath)
+		
+		-- we don't need usableHOW strings since HoW is always usable during AW
+		-- we don't use usableTV string since we want to HoW2 to go on cd and start recharging while we use TV
+		local cd, charges = GetHoWData()
+			if (s1 ~= idHammerOfWrath) and (s_HoWCharges == 2) and awCheck and knownHOW then
+				return GetCooldown(idHammerOfWrath)
 			end
 			return 100
 		end,
-			UpdateStatus = function()
+		
+		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idHoW2) and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
+				if playerSpellHammerOfWrath2 and (((UnitHealth("target") / (UnitHealthMax("target") + 1) * 100)) < 20) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
 			
-			s_HoWCharges = max(0, s_HoWCharges - 1)
-			
+			s_HoWCharges = max(0, s_HoWCharges - 1)		
 		end,
+		
 		info = "Hammer of Wrath (2 charges) during Avenging Wrath",
 	},
 
-	--Blade of Justice
-	--Note; No need to check for charges if they don't matter. Just bloated code.
-	--Note; Remove expurgation check after Xpac is over
+	-- Blade of Justice
 	boj = {
 		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) and (s_debuff_Expurgation < 8) then
+		
+			-- local strings for less confusing code
+			knownBOJ = IsSpellKnownOrOverridesKnown(idBladeOfJustice)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+		
+		local cd, charges = GetBoJData()
+
+			if (s1 ~= idBladeOfJustice) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idBoJ2) then
+				if IsPlayerSpell(idBladeOfJustice2) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
 
 			s_BoJCharges = max(0, s_BoJCharges - 1)
-
 		end,
+		
 		info = "Blade of Justice",
 	},
 
-	--Blade of Justice to apply Expurg
-	--Note; No need to check for charges if they don't matter. Just bloated code.
-	--Note; Remove expurgation check after Xpac is over
-	bojx = {
-		id = idBladeOfJustice,
-		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) and (s_debuff_Expurgation < 1) then
-				return GetCooldown(idBladeOfJustice)
-			end
-			return 100
-		end,
-		UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-
-				if IsPlayerSpell(idBoJ2) then
-					s_hp = min(3, s_hp + 2)
-				else
-					s_hp = min(3, s_hp + 1)
-				end
-
-			s_BoJCharges = max(0, s_BoJCharges - 1)
-
-		end,
-		info = "Blade of Justice to apply initial Expurgation DoT",
-	},
-
-	--Blade of Justice 2 stacks
+	-- Blade of Justice 2 stacks
 	boj2 = {
 		id = idBladeOfJustice,
 		GetCD = function()
-			if (s1 ~= idBladeOfJustice) and (s_BoJCharges == 2) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (not(IsUsableSpell(idTemplarsVerdict))) then
+		
+			-- local strings for less confusing code
+			knownBOJ = IsSpellKnownOrOverridesKnown(idBladeOfJustice)
+			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+		
+		local cd, charges = GetBoJData()
+			
+			if (s1 ~= idBladeOfJustice) and (s_BoJCharges == 2) and (s_hp <= 3) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idBoJ2) then
+				if IsPlayerSpell(idBladeOfJustice2) then
 					s_hp = min(3, s_hp + 2)
 				else
 					s_hp = min(3, s_hp + 1)
 				end
 
 			s_BoJCharges = max(0, s_BoJCharges - 1)
-
 		end,
+		
 		info = "Blade of Justice at 2 Stacks (TALENT)",
 	},
-
-	--Blade of Justice w/ Art of War proc
-	--Note; this code is obsolete but is kept here in case the function changes again in the future.
-	-- boj_aow = {
-		-- id = idBladeOfJustice,
-		-- GetCD = function()
-			-- if (s1 ~= idBladeOfJustice) and (s_hp <= 3) and IsSpellKnownOrOverridesKnown(idBladeOfJustice) and (s_buff_aow > 1) and (not(IsUsableSpell(idTemplarsVerdict))) then
-				-- return GetCooldown(idBladeOfJustice)
-			-- end
-			-- return 100
-		-- end,
-		-- UpdateStatus = function()
-			-- s_ctime = s_ctime + s_gcd + 1.5
-
-				-- if IsPlayerSpell(idBoJ2) then
-					-- s_hp = min(3, s_hp + 2)
-				-- else
-					-- s_hp = min(3, s_hp + 1)
-				-- end
-
-			-- s_BoJCharges = max(0, s_BoJCharges - 1)
-
-		-- end,
-		-- info = "Blade of Justice w/ Art of War Proc",
-	-- },
 
 	-- ----------------------------------
 	-- Holy Power Consumers
 	-- ----------------------------------
 
-	--Divine Storm Proc
+	-- Divine Storm Proc
 	ds = {
 		id = idDivineStorm,
 		GetCD = function()
-			if (s1 ~= idDivineStorm) and (s_buff_ds2 > 1) then
+			if (s1 ~= idDivineStorm) and s_buff_EmpyreanPowerDS then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 				s_hp = max(3, s_hp - 0)
 		end,
+		
 		info = "Divine Storm w/ Empyrean Power Proc",
 	},
 
-	--Divine Storm no sanctify buff (used to apply sanctify talent buff)
+	-- Divine Storm no sanctify buff (used to apply sanctify talent buff)
 	ds_s = {
 		id = idDivineStorm,
 		GetCD = function()
 		
-			--Shorthands to make the code easier to understand
-			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
-			
-			if (s1 ~= idDivineStorm) and VanguardCheck and (not(s_debuff_Sanctify > 1)) and IsPlayerSpell(idSanctify) and (s_buff_ds < 1) then
+			-- local strings for less confusing code
+			SanctifyTalent = IsPlayerSpell(idSanctify)
+		
+			if (s1 ~= idDivineStorm) and (s_buff_DivinePurpose or (s_hp > 2)) and not(s_debuff_Sanctify) and SanctifyTalent and s_buff_EmpyreanPowerDS then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 				s_hp = max(3, s_hp - 3)
 		end,
+		
 		info = "Divine Storm to apply Sanctify debuff",
 	},
 
@@ -807,104 +869,142 @@ local actions = {
 	-- ----------------------------------
 	-- Templar's Verdict
 	-- ----------------------------------
-	--
-	-- ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)))
-	--
-	-------------------------------------
 
-
-	--Templar's Verdict 
-	-- and (((s_debuff_Sanctify < 1) and IsPlayerSpell(idSanctify) and (s_buff_ds > 1)) or (((s_debuff_Sanctify > 1) and IsPlayerSpell(idSanctify)) or (not(IsPlayerSpell(idSanctify)))))
+	-- Templar's Verdict 
 	tv = {
 		id = idTemplarsVerdict,
 		GetCD = function()
 			
-			--Shorthands to make the code easier to understand
-			VanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2)) or (s_buff_DivinePurpose > 0))
-			JudgmentCheck = ((GetSpellCooldown(idJudgment) > 2) or (IsPlayerSpell(idToll) and (GetSpellCooldown(idToll) > 2)))
+			-- Keeping for possible later use
+			-- JudgmentCheck = ((C_Spell.GetSpellCooldown(idJudgment) > 2) or (IsPlayerSpell(idDivineToll) and (C_Spell.GetSpellCooldown(idDivineToll) > 2)))
+						
+			-- local strings for less confusing code
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+			knownDivineHammer = IsPlayerSpell(idDivineHammer)
 			
-			if (s1 ~= idTemplarsVerdict) and VanguardCheck and JudgmentCheck then
+			s_cd_DH = GetCooldown(idDivineHammer)
+			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
+			active_DH = (s_cd_DH > 105) -- divine hammer is UP
+			DivineHammerCheck1 = (((s_hp > 2) or s_buff_DivinePurpose) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
+			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
+
+	
+			
+			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (DivineHammerCheck1 or DivineHammerCheck2) then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-
-				if IsPlayerSpell(idVanguard) then
-					s_hp = min(4, s_hp - 4)
-				else
-					s_hp = min(3, s_hp - 3)
-				end
-
 		end,
+		
 		info = "Templar's Verdict",
 	},
 
-	--Templar's Verdic 5 HoPo
+	-- Templar's Verdic 5 HoPo
 	tv5 = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-						
-			if (s1 ~= idTemplarsVerdict) and (s_hp > 4) then
+			
+			-- local strings for less confusing code
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+			knownDivineHammer = IsPlayerSpell(idDivineHammer)
+			
+			s_cd_DH = GetCooldown(idDivineHammer)
+			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
+			active_DH = (s_cd_DH > 105) -- divine hammer is UP
+			DivineHammerCheck1 = (((s_hp > 4) or s_buff_DivinePurpose) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
+			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
+			
+			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (DivineHammerCheck1 or DivineHammerCheck2) then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-
-				if IsPlayerSpell(idVanguard) then
-					s_hp = min(4, s_hp - 4)
-				else
-					s_hp = min(3, s_hp - 3)
-				end
-
 		end,
+		
 		info = "Templar's Verdict at 5 Holy Power",
 	},
 
-	--Templar's Verdict w/ Empyrean Legacy proc
+	-- Templar's Verdict w/ Empyrean Legacy proc
 	tv_ds = {
 		id = idTemplarsVerdict,
 		GetCD = function()
 			
-			--Shorthands to make the code easier to understand
-			--"x" is to help prevent user confusion with other "VanguardCheck" in previous code
-			XVanguardCheck = ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or ((not(IsPlayerSpell(idVanguard))) and (s_hp > 2))) 
-		
-			if (s1 ~= idTemplarsVerdict) and XVanguardCheck and (s_buff_ds > 1) then
+			-- local strings for less confusing code
+			knownTV = IsSpellKnownOrOverridesKnown(idTemplarsVerdict)
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+			
+			if (s1 ~= idTemplarsVerdict) and knownTV and ((s_hp > 2) or s_buff_DivinePurpose) and s_buff_EmpyreanLegacyTV and not(knownHOL) then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 				s_hp = max(3, s_hp - 3)
 		end,
-		info = "Templar's Verdict with Empyrean Legacy Proc",
+		
+		info = "Templar's Verdict with Empyrean Legacy (Divine Storm) Proc",
 	},
 
 	-- ----------------------------------
 	-- Talents (Execution Sentence, etc)
 	-- ----------------------------------
+	
+	-- Hammer of light
+		hol = {
+		id = idHammerOfLightDummy,
+		GetCD = function()
+			
+			-- local strings for less confusing code
+			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
+			usableHOL = C_Spell.IsSpellUsable(idHammerOfLight)
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+			knownDivineHammer = IsPlayerSpell(idDivineHammer)
+			
+			s_cd_DH = GetCooldown(idDivineHammer)
+			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
+			active_DH = (s_cd_DH > 105) -- divine hammer is UP
+			DivineHammerCheck1 = (((s_hp > 4) or s_buff_DivinePurpose) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
+			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
+			
+			if (s1 ~= idHammerOfLightDummy) and usableHOL and IsSpellOverlayed(idHammerOfLight) and (DivineHammerCheck1 or DivineHammerCheck2) then
+				return 0
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_gcd + 1.5
+		end,
+		
+		info = "Hammer of Light (Templar)",
+	},
 
-	--Final Reckoning
+	-- Final Reckoning
 	fr = {
 		id = idFinalReckoning,
 		GetCD = function()
 		
-		--Shorthands to make the code easier to understand
-		frCheck = (IsSpellKnownOrOverridesKnown(idFinalReckoning) and (GetCooldown(idFinalReckoning) < 3))
+		-- Redundancy to make sure FR is known and off cd
+		frCheck = (IsSpellKnownOrOverridesKnown(343721) and (GetCooldown(343721) < 3))
 		
 		--Checks to make sure Divine Auxillary talent will not over cap Holy Power if specced with Vanguard
-		AuxVanguardHPcapCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) and ((IsPlayerSpell(idVanguard) and (s_hp > 3)) or (not(IsPlayerSpell(idVanguard)) and (s_hp > 2))))	
+		AuxHPcapCheck = ((not(IsPlayerSpell(406158)) and (s_hp > 2)) or (IsPlayerSpell(406158) and (s_hp < 4)))
 			
-			if (s1 ~= idFinalReckoning) and frCheck and (AuxVanguardHPcapCheck or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 2))) then
+			if (s1 ~= idFinalReckoning) and frCheck and AuxHPcapCheck then
 				return GetCooldown(idFinalReckoning)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5 / s_haste
 
@@ -913,26 +1013,53 @@ local actions = {
 				else
 					s_hp = min(3, s_hp + 0)
 				end
-
 		end,
+		
 		info = "Final Reckoning",
 	},
 
-	--Execution Sentence Boss only
+	-- Divine Hammers 
+	dh = {
+		id = idDivineHammer,
+		GetCD = function()
+		
+			-- local strings for less confusing code
+			knownDH = IsSpellKnownOrOverridesKnown(idDivineHammer)
+			
+			if (s1 ~= idDivineHammer) and knownDH and (s_hp > 2) then
+				return GetCooldown(idDivineHammer)
+			end
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+		end,
+		
+		info = "Divine Hammer",
+	},
+
+	-- Execution Sentence Boss only
 	es_boss = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
-			--Shorthands to make the code easier to understand
-			level = UnitLevel("target")
-			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
-			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence))
+			-- local strings for less confusing code
+			knownES = IsSpellKnownOrOverridesKnown(idExecutionSentence)
+			usableES = C_Spell.IsSpellUsable(idExecutionSentence)
 			
-			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck and ((level < 0) or (level > 72)) then
+			-- checks target level 
+			level = UnitLevel("target")
+			
+			-- makes sure you dont overcap holy power too much
+			AuxHPcapCheck = ((not(IsPlayerSpell(406158)) and (s_hp > 2)) or (IsPlayerSpell(406158) and (s_hp < 4)))
+					
+			if (s1 ~= idExecutionSentence) and usableES and knownES and AuxHPcapCheck and ((level < 0) or (level > 72)) then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
@@ -941,26 +1068,32 @@ local actions = {
 				else
 					s_hp = min(3, s_hp + 0)
 				end
-
 		end,
+		
 		info = "Execution Sentence on Boss level mobs only",
 	},
 
-	--Execution Sentence 
+	-- Execution Sentence  
 	es = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
-			--Shorthands to make the code easier to understand
-			level = UnitLevel("target")
-			DivineAuxCheck = ((not(IsPlayerSpell(idDivineAuxiliary))) or (IsPlayerSpell(idDivineAuxiliary) and (s_hp < 5)))
-			ExecCheck = (IsUsableSpell(idExecutionSentence) and IsSpellKnownOrOverridesKnown(idExecutionSentence))
+			-- local strings for less confusing code
+			knownES = IsSpellKnownOrOverridesKnown(idExecutionSentence)
+			usableES = C_Spell.IsSpellUsable(idExecutionSentence)
 			
-			if (s1 ~= idExecutionSentence) and ExecCheck and DivineAuxCheck then
+			-- checks target level 
+			level = UnitLevel("target")
+			
+			-- makes sure you dont overcap holy power too much
+			AuxHPcapCheck = ((not(IsPlayerSpell(406158)) ) or (IsPlayerSpell(406158) and (s_hp < 4)))
+			
+			if (s1 ~= idExecutionSentence) and usableES and knownES and AuxHPcapCheck then
 				return GetCooldown(idExecutionSentence)
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
@@ -969,7 +1102,6 @@ local actions = {
 				else
 					s_hp = min(3, s_hp + 0)
 				end
-
 		end,
 		info = "Execution Sentence",
 	},
@@ -978,17 +1110,23 @@ local actions = {
 	-- Divine Purpose Procs
 	-- --------------------------------------------
 
-	--Templar's Verdict with Divine Purpose
+	-- Templar's Verdict with Divine Purpose
 	tvdp = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			if (s1 ~= idTemplarsVerdict) and (s_buff_DivinePurpose > 0) then
+		
+			-- local strings for less confusing code
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+		
+			if (s1 ~= idTemplarsVerdict) and s_buff_DivinePurpose and not(knownHOL) then
 				return 0
 			end
 			return 100
 		end,
+		
 		UpdateStatus = function()
 		end,
+		
 		info = "Templar's Verdict w/ DP Proc",
 	},
 
@@ -996,51 +1134,31 @@ local actions = {
 	-- (Ex)Covenant Abilities
 	-- ----------------------------------
 
-	--Divine Toll 
+	-- Divine Toll 
 	dt = {
-		id = idToll,
+		id = idDivineToll,
 		GetCD = function()
 
-			if (s1 ~= idToll) and IsPlayerSpell(idToll) then
-				return GetCooldown(idToll)	
+			if (s1 ~= idDivineToll) and IsPlayerSpell(idDivineToll) and (GetCooldown(idDivineToll) < 1) then
+				return GetCooldown(idDivineToll)
 			end
-
 			return 100
 		end,
+		
 			UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-			--s_debuff_Judgment = 8
 			
 					s_hp = min(3, s_hp + 1)
-
 		end,
+		
 		info = "Divine Toll",
 	},
-
-	--Divine Toll w/ expurg dot
-	dtx = {
-		id = idToll,
-		GetCD = function()
-
-			if (s1 ~= idToll) and IsPlayerSpell(idToll) and (s_debuff_Expurgation > 1) then
-				return GetCooldown(idToll)	
-			end
-
-			return 100
-		end,
-			UpdateStatus = function()
-			s_ctime = s_ctime + s_gcd + 1.5
-			--s_debuff_Judgment = 8
-			
-					s_hp = min(3, s_hp + 1)
-
-		end,
-		info = "Divine Toll w/ Expurgation to trigger Wrathful Sanction (T31 2pc)",
-	},
-
+	
 }
 
---------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
+
+
 
 local function UpdateQueue()
 	-- normal queue
@@ -1058,65 +1176,56 @@ local function UpdateQueue()
 	qTaint = true
 end
 
-local function GetBuff(buff)
-
-	local left = 0
-	local _, expires
-	_, _, _, _, _, expires = APIWrapper.UnitBuff("player", buff, nil, "PLAYER")
-	if expires then
-		left = max(0, expires - s_ctime - s_gcd)
-	end
-	return left
-end
-
-local function GetDebuff(debuff)
-	local left = 0
-	local _, expires
-	_, _, _, _, _, expires = APIWrapper.UnitDebuff("target", debuff, nil, "PLAYER")
-	if expires then
-		left = max(0, expires - s_ctime - s_gcd)
-	end
-	return left
-end
-
-
--- reads all the interesting data // List of Buffs
+	-- reads all the interesting data // List of Buffs
 local function GetStatus()
 	-- current time
 	s_ctime = GetTime()
 
 	-- gcd value
-	local start, duration = GetSpellCooldown(idGCD)
+	local spellCooldownInfo = C_Spell.GetSpellCooldown(idGCD)
+	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+	
 	s_gcd = start + duration - s_ctime
 	if s_gcd < 0 then s_gcd = 0 end
-
-
+		
 	-- the buffs
-	if (talent_DivinePurpose) then
-		s_buff_DivinePurpose = GetBuff(ln_buff_DivinePurpose)
-	else
-		s_buff_DivinePurpose = 0
-	end
+	s_buff_AvengingWrath = C_UnitAuras.GetPlayerAuraBySpellID(idAvengingWrath)
+	s_buff_Crusade = C_UnitAuras.GetPlayerAuraBySpellID(idCrusade)
+	s_buff_ArtOfWar = C_UnitAuras.GetPlayerAuraBySpellID(idArtOfWar)
+	s_buff_DivinePurpose = C_UnitAuras.GetPlayerAuraBySpellID(idDivinePurpose)
+	s_buff_FinalVerdict = C_UnitAuras.GetPlayerAuraBySpellID(idFinalVerdictHOW)
+	s_buff_EmpyreanLegacyTV = C_UnitAuras.GetPlayerAuraBySpellID(idEmpyreanLegacyTV)
+	s_buff_EmpyreanPowerDS = C_UnitAuras.GetPlayerAuraBySpellID(idEmpyreanPowerDS)
+	s_buff_BlessingOfAnshe = C_UnitAuras.GetPlayerAuraBySpellID(idBlessingOfAnshe)
+	s_buff_ForWhomTheBellTolls = C_UnitAuras.GetPlayerAuraBySpellID(idForWhomTheBellTolls)
+	s_buff_EchoesOfWrath = C_UnitAuras.GetPlayerAuraBySpellID(idEchoesOfWrath)
+
+	-- retrieves localized debuff spell name
+	local spellInfoJudgment = C_Spell.GetSpellInfo(idJudgment)
+	local debuffJudgment = spellInfoJudgment.name
 	
-	s_buff_aow = GetBuff(ln_buff_aow)
-	s_buff_DivinePurpose = GetBuff(ln_buff_DivinePurpose)
-	s_buff_ds2 = GetBuff(ln_buff_ds2)
-	s_buff_aw = GetBuff(ln_buff_aw)
-	s_buff_FinalVerdict = GetBuff(ln_buff_FinalVerdict)
-	s_buff_ds = GetBuff(ln_buff_ds)
-	s_buff_Crusade = GetBuff(ln_buff_Crusade)
-	s_buff_EchoesOfWrath = GetBuff(ln_buff_EchoesOfWrath)
+	local spellInfoExecutionSentence = C_Spell.GetSpellInfo(idExecutionSentence)
+	local debuffExecutionSentence = spellInfoExecutionSentence.name
+	
+	local spellInfoFinalReckoning = C_Spell.GetSpellInfo(idFinalReckoning)
+	local debuffFinalReckoning = spellInfoFinalReckoning.name
+	
+	local spellInfoSanctify = C_Spell.GetSpellInfo(idSanctify)
+	local debuffSanctify = spellInfoSanctify.name
+
+	local spellInfoExpurgation = C_Spell.GetSpellInfo(idExpurgation)
+	local debuffExpurgation = spellInfoExpurgation.name
 
 	-- the debuffs
-	s_debuff_Judgment = GetDebuff(ln_debuff_Judgment)
-	s_debuff_ExecutionSentence = GetDebuff(ln_debuff_Exec)
-	s_debuff_FinalReckoning = GetDebuff(ln_debuff_FinalReckoning)
-	s_debuff_Sanctify = GetDebuff(ln_debuff_Sanctify)
-	s_debuff_Expurgation = GetDebuff(ln_debuff_Expurgation)
+	s_debuff_Judgment = AuraUtil.FindAuraByName(debuffJudgment, "target", "HARMFUL")
+	s_debuff_ExecutionSentence = AuraUtil.FindAuraByName(debuffExecutionSentence, "target", "HARMFUL")
+	s_debuff_FinalReckoning = AuraUtil.FindAuraByName(debuffFinalReckoning, "target", "HARMFUL")
+	s_debuff_Sanctify = AuraUtil.FindAuraByName(debuffSanctify, "target", "HARMFUL")
+	s_debuff_Expurgation = AuraUtil.FindAuraByName(debuffExpurgation, "target", "HARMFUL")
 
-	-------------------
-	-- Spell Charges --
-	-------------------
+	-- ----------------------------------------
+	-- Spell Charges for GetStatus Function --
+	-- ----------------------------------------
 	
 	-- crusader strike stacks
 	local cd, charges = GetCSData()
@@ -1134,9 +1243,9 @@ local function GetStatus()
 	local cd, charges = GetJudgmentData()
 	s_JudgmentCharges = charges
 	
-	-------------------------
+	-- -----------------------
 	-- client hp and haste --
-	-------------------------
+	-- -----------------------
 	s_hp = UnitPower("player", 9)
 	s_haste = 1 + UnitSpellHaste("player") / 100
 end
@@ -1147,16 +1256,7 @@ local function GetWorkingQueue()
 	q = {}
 	local name, selected, available
 	for k, v in pairs(qn) do
-		-- see if it has a talent requirement
-		if actions[v].reqTalent then
-			-- see if the talent is activated
-			_, name, _, selected, available = GetTalentInfoByID(actions[v].reqTalent, GetActiveSpecGroup())
-			if name and selected and available then
-				table.insert(q, v)
-			end
-		else
 			table.insert(q, v)
-		end
 	end
 end
 
@@ -1237,30 +1337,13 @@ function xmod.Rotation()
 
 	s_otime = s_ctime - s_otime
 
-	-- adjust buffs
-	s_buff_aow = max(0, s_buff_aow - s_otime)
-	s_buff_DivinePurpose = max(0, s_buff_DivinePurpose - s_otime)	
-	s_buff_ds2 = max(0, s_buff_ds2 - s_otime)
-	s_buff_aw = max(0, s_buff_aw - s_otime)
-	s_buff_FinalVerdict = max(0, s_buff_FinalVerdict - s_otime)
-	s_buff_ds = max(0, s_buff_ds - s_otime)
-	s_buff_Crusade = max(0, s_buff_Crusade - s_otime)
-	s_buff_EchoesOfWrath = max(0, s_buff_EchoesOfWrath - s_otime)
-
-	-- the debuffs
-	s_debuff_Judgment = max(0, s_debuff_Judgment - s_otime)
-	s_debuff_ExecutionSentence = max(0, s_debuff_ExecutionSentence - s_otime)
-	s_debuff_FinalReckoning = max(0, s_debuff_FinalReckoning - s_otime)
-	s_debuff_Sanctify = max(0, s_debuff_Sanctify - s_otime)
-	s_debuff_Expurgation = max(0, s_debuff_Expurgation - s_otime)
-
-	-------------------
-	-- Spell Charges --
-	-------------------
+	-- -----------------------------------
+	-- Spell Charges for xmod.rotation --
+	-- -----------------------------------
 	
 	-- crusader strike stacks
 	local cd, charges = GetCSData()
-	s_CrusaderStrikeCharges = charges
+		s_CrusaderStrikeCharges = charges
 	
 	if (s1 == idCrusaderStrike) then
 		s_CrusaderStrikeCharges = s_CrusaderStrikeCharges - 1
@@ -1269,11 +1352,10 @@ function xmod.Rotation()
 
 	-- HoW Charges
 	local cd, charges = GetHoWData()
-	s_HoWCharges = charges
+		s_HoWCharges = charges
 	
-	if (s1 == idHoW) then
+	if (s1 == idHammerOfWrath) then
 		s_HoWCharges = s_HoWCharges - 1
-
 	end
 
 	-- BoJ Charges
@@ -1282,16 +1364,14 @@ function xmod.Rotation()
 	
 	if (s1 == idBladeOfJustice) then
 		s_BoJCharges = s_BoJCharges - 1
-
 	end
 
 	-- Judgment Charges
 	local cd, charges = GetJudgmentData()
-	sJudgmentCharges = charges
+		s_JudgmentCharges = charges
 	
 	if (s1 == idJudgment) then
 		s_JudgmentCharges = s_JudgmentCharges - 1
-
 	end
 
 	---------------
@@ -1309,6 +1389,7 @@ function xmod.Rotation()
 		debug:AddBoth("dJudgment", s_debuff_Judgment)
 		debug:AddBoth("bDivinePurpose", s_buff_DivinePurpose)
 	end
+	
 	s2, action = GetNextAction()
 	if debug and debug.enabled then
 		debug:AddBoth("s2", action)
@@ -1323,12 +1404,6 @@ ef:Hide()
 local function OnEvent()
 	qTaint = true
 
-	-- DivinePurpose talent
-	-- local _, name, _, selected, available = GetTalentInfoByID(22215, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- talent_DivinePurpose = selected
-	-- end
-	
 	-- DivinePurpose talent
 	local isKnown = IsPlayerSpell(idDivinePurpose)
 	if isKnown then
