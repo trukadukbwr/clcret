@@ -1,7 +1,7 @@
 r256 07/11/2024
 -Updated for The War Within
 -Added support for Hero talents (No major rotational changes, but the support is there to detect and use them)
--Redesigned Buff/Debuff detection code to, once again, work. It actually broke in 10.2, but the detection wasn't really neded since things like Judgment and Expurgation were applied so often that it didn't matter
+-Redesigned Buff/Debuff detection code to, once again, work. It actually broke in 10.2, but the detection wasn't really needed since things like Judgment and Expurgation were applied so often that it didn't matter
 -The code for Hammer of Light is functional, but more testing will be needed to ensure quality. This string will be updated before the Hero Talent becomes available with the expansion release
 -Modified the Hammer of Wrath with Avenging Wrath string; it will now suggest Hammer of Wrath basically whenever it procs, since Hero Talents added multiple ways for it to proc. The description is not updated to reflect this since it breaks anyone's rotation if I changed the abbreviations, and how_aw might confuse people with all the other changes. Will be updated in later release so no one will be overwhelmed and will instead be whelmed.
 -Added support for new Divine Hammers talent
