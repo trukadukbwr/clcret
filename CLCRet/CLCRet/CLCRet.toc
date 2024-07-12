@@ -1,0 +1,15 @@
+## Interface: 110000
+## Title: |cffF58CBACLCret|r
+## Notes: Retribution FCFS helper
+## Author: Trukarak-Blackwater Raiders
+## SavedVariables: clcretDB
+## IconTexture: 626003
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
+clcret.lua
+
+retmodule\index.xml
+rotation.lua
