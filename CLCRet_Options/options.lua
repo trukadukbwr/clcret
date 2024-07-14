@@ -30,20 +30,22 @@ local anchorPoints = {
 	BOTTOMLEFT = "BOTTOMLEFT",
 	BOTTOMRIGHT = "BOTTOMRIGHT"
 }
-local execList = {
-	AuraButtonExecNone = "None",
-	AuraButtonExecSkillVisibleAlways = "Skill always visible",
-	AuraButtonExecSkillVisibleNoCooldown = "Skill visible when available",
-	AuraButtonExecSkillVisibleOnCooldown = "Skill visible when not available",
-	AuraButtonExecItemVisibleAlways = "OnUse item always visible",
-	AuraButtonExecItemVisibleNoCooldown = "OnUse item visible when available",
-	AuraButtonExecGenericBuff = "Generic buff",
-	AuraButtonExecGenericDebuff = "Generic debuff",
-	AuraButtonExecPlayerMissingBuff = "Missing player buff",
-	AuraButtonExecICDItem = "ICD Proc",
-}
-local skillButtonNames = { "Main skill", "Secondary skill" }
 
+local execList = {
+	AuraButtonExecaNone = "None",
+	AuraButtonExecSkillVisibleAlways = "Skill always visible",
+	AuraButtonExecSkillVisibleNoCooldown = "Skill visible off CD",
+	AuraButtonExecSkillVisibleOnCooldown = "Skill visible on CD",
+	AuraButtonExecSkillVisibleOnCooldown2 = "---",
+	AuraButtonExecItemVisibleAlways = "Item always visible",
+	AuraButtonExecItemVisibleNoCooldown = "Item visible off CD",
+	AuraButtonExecItemVisibleNoCooldownEquip = "Equipped; visible off CD",
+	AuraButtonExecItemVisibleNoCooldownEquip2 = "---",
+	AuraButtonExecPlayerMissingBuff = "Missing player buff",
+	AuraButtonExecPlayerMissingBuff2 = "---",
+}
+
+local skillButtonNames = { "Main skill", "Secondary skill" }
 
 -- index lookup for aura buttons
 local ilt = {}
@@ -109,7 +111,7 @@ function abgs:SpellSet(val)
 		end
 	-- item
 	elseif (db.auras[i].data.exec == "AuraButtonExecItemVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecItemVisibleNoCooldown") then
-		local name, link = GetItemInfo(val)
+		local name, link = C_Item.GetItemInfo(val)
 		if name then
 			db.auras[i].data.spell = val
 		else
