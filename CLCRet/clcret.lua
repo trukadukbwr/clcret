@@ -26,7 +26,6 @@ nq[2] = spellInfo(85256)
 local csname = spellInfo(35395)
 
 -- main and secondary skill buttons
--- smartsvn test
 local buttons = {}
 -- configurable buttons
 local auraButtons = {}
@@ -55,7 +54,6 @@ local strataLevels = {
 	"FULLSCREEN_DIALOG",
 	"TOOLTIP",
 }
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- DEFAULT VALUES
@@ -137,15 +135,13 @@ for i = 1, MAX_AURAS do
 end
 
 clcret.db_defaults = defaults
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- MAIN UPDATE FUNCTION
 -- ---------------------------------------------------------------------------------------------------------------------
 local throttle = 0
 local throttleAuras = 0
--- local throttleSov = 0
+
 local function OnUpdate(self, elapsed)
 	throttle = throttle + elapsed
 	if throttle > clcret.scanFrequency then
@@ -165,7 +161,6 @@ local function OnUpdate(self, elapsed)
 	end
 
 end
--- ---------------------------------------------------------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- INIT
@@ -185,10 +180,12 @@ local function ShowOptions()
 	Settings.OpenToCategory("CLCRet")
 
 end
+
 local function CmdLinePrio(args)
 	clcret.db.profile.rotation.prio = args
 	clcret.RR_UpdateQueue()
 end
+
 function clcret:OnInitialize()
 	-- SAVEDVARS
 	self.db = LibStub("AceDB-3.0"):New("clcretDB", defaults)
@@ -200,6 +197,7 @@ function clcret:OnInitialize()
 	-- this would give a proper init
 	self:RegisterEvent("QUEST_LOG_UPDATE")
 end
+
 function clcret:QUEST_LOG_UPDATE()
 	self:UnregisterEvent("QUEST_LOG_UPDATE")
 	-- test if it's a paladin or not
@@ -227,7 +225,6 @@ function clcret:QUEST_LOG_UPDATE()
 	self:RegisterChatCommand("clcretlp", CmdLinePrio)
 	self:RegisterChatCommand("rl", ReloadUI)
 	
-	
 	self:UpdateEnabledAuraButtons()
 	
 	-- create the power bar
@@ -254,6 +251,7 @@ function clcret:QUEST_LOG_UPDATE()
 	self:InitDebugFrame()
 	--]]
 end
+
 function clcret:OnSkin(skin, glossAlpha, gloss, group, _, colors)
 	local styleDB
 	if group == 'Skills' then
@@ -272,7 +270,6 @@ function clcret:OnSkin(skin, glossAlpha, gloss, group, _, colors)
 	self:UpdateAuraButtonsLayout()
 	self:UpdateSkillButtonsLayout()
 end
--- ---------------------------------------------------------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- SHOW WHEN SETTINGS
@@ -315,11 +312,13 @@ function clcret:PLAYER_REGEN_ENABLED()
 	if not addonEnabled then return end
 	self.frame:Hide()
 end
+
 -- in combat
 function clcret:PLAYER_REGEN_DISABLED()
 	if not addonEnabled then return end
 	self.frame:Show()
 end
+
 -- target change
 function clcret:PLAYER_TARGET_CHANGED()
 	if not addonEnabled then return end
@@ -337,6 +336,7 @@ function clcret:PLAYER_TARGET_CHANGED()
 		self.frame:Hide()
 	end
 end
+
 -- unit faction changed - test if it gets fired everytime a target switches friend -> enemy
 function clcret:UNIT_FACTION(event, unit)
 	if unit == "target" then
@@ -365,14 +365,12 @@ function clcret:PLAYER_TALENT_UPDATE()
 		self:CLCRETDisable()
 	end
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- UPDATE FUNCTIONS
 -- ---------------------------------------------------------------------------------------------------------------------
 -- just show the button for positioning
-function clcret:AuraButtonExecNone(index)
+function clcret:AuraButtonExecaNone(index)
 	auraButtons[auraIndex]:Show()
 end
 
@@ -390,21 +388,19 @@ function clcret:AuraButtonExecSkillVisibleAlways()
 	
 	button:Show()
 	
-	if C_Spell.IsSpellUsable(data.spell) then
+	if IsUsableSpell(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
 	end
 	
-	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
-	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
-	
+	local start, duration = C_Spell.GetSpellCooldown(data.spell)
 	if duration and duration > 0 then
 		button.cooldown:SetCooldown(start, duration)
 	end
 end
 
--- shows a skill only when out of cooldown
+-- shows a skill only when off cd
 function clcret:AuraButtonExecSkillVisibleNoCooldown()
 	local index = auraIndex
 	local button = auraButtons[index]
@@ -416,10 +412,9 @@ function clcret:AuraButtonExecSkillVisibleNoCooldown()
 		button.texture:SetTexture(GetSpellTexture(data.spell))
 	end
 
-	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
-	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+	local start, duration = C_Spell.GetSpellCooldown(data.spell)
 	
-	if C_Spell.IsSpellUsable(data.spell) then
+	if IsUsableSpell(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
@@ -432,7 +427,7 @@ function clcret:AuraButtonExecSkillVisibleNoCooldown()
 	end
 end
 
--- shows a skill only when on cooldown
+-- shows a skill only when on cd
 function clcret:AuraButtonExecSkillVisibleOnCooldown()
 	local index = auraIndex
 	local button = auraButtons[index]
@@ -444,8 +439,7 @@ function clcret:AuraButtonExecSkillVisibleOnCooldown()
 		button.texture:SetTexture(GetSpellTexture(data.spell))
 	end
 
-	local spellCooldownInfo = C_Spell.GetSpellCooldown(data.spell)
-	local start, duration = spellCooldownInfo.startTime, spellCooldownInfo.duration
+	local start, duration = C_Spell.GetSpellCooldown(data.spell)
 	
 	if duration and duration > 1.5 then
 		button:Show()
@@ -455,7 +449,7 @@ function clcret:AuraButtonExecSkillVisibleOnCooldown()
 	end
 end
 
--- shows an equiped usable item always with a visible cooldown when needed
+-- shows a usable item always and with a visible cooldown when needed
 function clcret:AuraButtonExecItemVisibleAlways()
 	local index = auraIndex
 	local button = auraButtons[index]
@@ -464,25 +458,25 @@ function clcret:AuraButtonExecItemVisibleAlways()
 	-- fix the texture once
 	if not button.hasTexture then
 		button.hasTexture = true
-		button.texture:SetTexture(GetItemIcon(data.spell))
+		button.texture:SetTexture(C_Item.GetItemIconByID(data.spell))
 	end
 	
 	button:Show()
 	
-	if IsUsableItem(data.spell) then
+	if C_Item.IsUsableItem(data.spell) and C_Item.IsEquippedItem(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
 	end
 	
-	local start, duration = GetItemCooldown(data.spell)
+	local start, duration = C_Item.GetItemCooldown(data.spell)
 	if duration and duration > 0 then
 		button.cooldown:SetCooldown(start, duration)
 	end
-
+	
 end
 
--- shows shows an equiped usable item only when out of cooldown
+-- shows shows a usable item only when out of cooldown
 function clcret:AuraButtonExecItemVisibleNoCooldown()
 	local index = auraIndex
 	local button = auraButtons[index]
@@ -491,12 +485,12 @@ function clcret:AuraButtonExecItemVisibleNoCooldown()
 	-- fix the texture once
 	if not button.hasTexture then
 		button.hasTexture = true
-		button.texture:SetTexture(GetItemIcon(data.spell))
+		button.texture:SetTexture(C_Item.GetItemIconByID(data.spell))
 	end
 
-	local start, duration = GetItemCooldown(data.spell)
+	local start, duration = C_Item.GetItemCooldown(data.spell)
 	
-	if IsUsableItem(data.spell) then
+	if C_Item.IsUsableItem(data.spell) and C_Item.IsEquippedItem(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
@@ -507,8 +501,39 @@ function clcret:AuraButtonExecItemVisibleNoCooldown()
 	else
 		button:Show()
 	end
+	
 end
 
+-- shows shows an Equipped usable item only when off cooldown
+function clcret:AuraButtonExecItemVisibleNoCooldownEquip()
+	local index = auraIndex
+	local button = auraButtons[index]
+	local data = db.auras[index].data
+
+	-- fix the texture once
+	if not button.hasTexture then
+		button.hasTexture = true
+		button.texture:SetTexture(C_Item.GetItemIconByID(data.spell))
+	end
+
+	local start, duration = C_Item.GetItemCooldown(data.spell)
+	
+	if C_Item.IsUsableItem(data.spell) and C_Item.IsEquippedItem(data.spell) then
+		button.texture:SetVertexColor(1, 1, 1, 1)
+	else
+		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
+	end
+	
+	if duration and duration > 1.5 then
+		button:Hide()
+	else
+		button:Show()
+	end
+	
+	if not C_Item.IsEquippedItem(data.spell) then
+		button:Hide()
+	end
+end
 
 -- displayed when a specific spell isn't active on player
 function clcret:AuraButtonExecPlayerMissingBuff()
@@ -521,157 +546,13 @@ function clcret:AuraButtonExecPlayerMissingBuff()
 		button.hasTexture = true
 	end
 	
-	local name, rank, icon, count, debuffType, duration, expirationTime, caster = UnitBuff("player", data.spell)
-	if not name then
+	local aura = C_UnitAuras.GetAuraDataBySpellName("player", data.spell)
+	if not aura then
 		button:Show()
 	else
 		button:Hide()
 	end
 end
-
--- experimental item with icd stuff
--- states:
---	no icd
---  buff active
---  icd
-function clcret:AuraButtonExecICDItem()
-	local index = auraIndex
-	local button = auraButtons[index]
-	local data = icd.data[index]
-	
-	spellInfo = C_Spell.GetSpellInfo
-	
-	if not button.hasTexture then
-		local _, _, tex = spellInfo(data.id)
-		button.texture:SetTexture(tex)
-		button.hasTexture = true
-	end
-
-	local gt = GetTime()
-	if (gt - data.start) > data.durationBuff then data.active = false end
-	if (gt - data.start) > data.durationICD then data.enabled = false end
-	
-	if data.active then 
-		-- always show the button when proc is active
-		button:Show()
-		button.cooldown:Show()
-		button.cooldown:SetCooldown(data.start, data.durationBuff)
-		button:SetAlpha(1)
-		
-	elseif data.enabled then
-		-- check how to display
-		if db.icd.visibility.cd == 1 then
-			button:Show()
-			button:SetAlpha(1)
-		elseif db.icd.visibility.cd == 2 then
-			button:Show()
-			button:SetAlpha(0.3)
-		else
-			button:Hide()
-			return
-		end
-		
-		button.cooldown:Show()
-		button.cooldown:SetCooldown(data.start, data.durationICD)
-	else
-		if db.icd.visibility.ready == 1 then
-			button:Show()
-			button:SetAlpha(1)
-		elseif db.icd.visibility.ready == 2 then
-			button:Show()
-			button:SetAlpha(0.5)
-		else
-			button:Hide()
-		end
-		
-		button.cooldown:Hide()
-	end
-end
-
-
--- checks for a buff by player (or someone) on unit
-function clcret:AuraButtonExecGenericBuff()
-	local index = auraIndex
-	local button = auraButtons[index]
-	local data = db.auras[index].data
-	
-	if not UnitExists(data.unit) then
-		button:Hide()
-		return
-	end
-	
-	local name, rank, icon, count, debuffType, duration, expirationTime, caster = UnitBuff(data.unit, data.spell)
-	if name then
-		if data.byPlayer and (caster ~= "player") then
-			-- player required and not found
-			button:Hide()
-		else
-			-- found the debuff
-			if duration and duration > 0 then
-				button.cooldown:SetCooldown(expirationTime - duration, duration)
-			end
-			
-			-- fix texture once
-			if not button.hasTexture then
-				button.texture:SetTexture(icon)
-				button.hasTexture = true
-			end
-			
-			button:Show()
-			
-			if count > 1 then
-				button.stack:SetText(count)
-				button.stack:Show()
-			else
-				button.stack:Hide()
-			end
-		end
-	else
-		button:Hide()
-	end
-end
-
--- checks for a debuff cast by player (or someone) on unit
-function clcret:AuraButtonExecGenericDebuff()
-	local index = auraIndex
-	local button = auraButtons[index]
-	local data = db.auras[index].data
-	
-	if not UnitExists(data.unit) then
-		button:Hide()
-		return
-	end
-	
-	local name, rank, icon, count, debuffType, duration, expirationTime, caster = UnitDebuff(data.unit, data.spell)
-	if name then
-		if data.byPlayer and (caster ~= "player") then
-			button:Hide()
-		else
-			-- found the debuff
-			if duration and duration > 0 then
-				button.cooldown:SetCooldown(expirationTime - duration, duration)
-			end
-			
-			-- fix texture once
-			if not button.hasTexture then
-				button.texture:SetTexture(icon)
-				button.hasTexture = true
-			end
-			
-			button:Show()
-			
-			if count > 1 then
-				button.stack:SetText(count)
-				button.stack:Show()
-			else
-				button.stack:Hide()
-			end
-		end
-	else
-		button:Hide()
-	end
-end
-
 
 -- resets the vertex color when grayOOM option changes
 function clcret:ResetButtonVertexColor()
@@ -710,8 +591,6 @@ function clcret:UpdateUI()
 	end
 end
 
-
-
 -- melee range check
 function clcret:CheckRange()
 	local range
@@ -743,18 +622,13 @@ function clcret:CheckRange()
 		end
 	end
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- QUEUE LOGIC
 -- ---------------------------------------------------------------------------------------------------------------------
--- holy blank function
 function clcret:DoNothing()
 	self:CLCRETDisable()
 end
-
-
 
 function clcret:CheckQueueRet()
 	dq[1], dq[2] = clcret.RetRotation()
@@ -765,8 +639,6 @@ function clcret:CheckQueueRet()
 	nq[2] = spellInfo(dq[2])
 	self:UpdateUI()
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- ENABLE/DISABLE
@@ -784,8 +656,6 @@ function clcret:CLCRETDisable()
 		self.frame:Hide()
 	end
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- UPDATE LAYOUT
@@ -855,15 +725,12 @@ function clcret:UpdateButtonLayout(button, opt)
 	end
 end
 
-
 -- update scale, alpha, position for main frame
 function clcret:UpdateFrameSettings()
 	self.frame:SetScale(max(db.scale, 0.01))
 	self.frame:SetAlpha(db.alpha)
 	self.frame:SetPoint("BOTTOMLEFT", db.x, db.y)
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- INIT LAYOUT
@@ -992,7 +859,6 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button:Hide()
 	return button
 end
--- ---------------------------------------------------------------------------------------------------------------------
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- FULL DISABLE
@@ -1081,10 +947,6 @@ local ceAuraRemoved = {
 	["SPELL_AURA_REMOVED_DOSE"] = true,
 }
 
-
--- icd related stuff
--- helper functions
-
 -- reports min icd for a specified aura button
 function clcret:ICDReportMinCd(args)
 	local id = tonumber(args)
@@ -1118,7 +980,6 @@ function clcret:AuraButtonUpdateICD()
 	self:RegisterCLEU()
 end
 
-
 function clcret:RegisterCLEU()
 	if icd.cleu then
 		self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -1126,7 +987,6 @@ function clcret:RegisterCLEU()
 		self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	end
 end
-
 
 -- cleu dispatcher wannabe
 function clcret:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, spellType, dose, ...)
@@ -1153,6 +1013,3 @@ function clcret:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideC
 		end
 	end
 end
--- ---------------------------------------------------------------------------------------------------------------------
-
-
