@@ -20,10 +20,10 @@ local nq = {}
 
 spellInfo = C_Spell.GetSpellInfo
 
-nq[1] = spellInfo(85256)
-nq[2] = spellInfo(85256)
+nq[1] = C_Spell.GetSpellInfo(85256)
+nq[2] = C_Spell.GetSpellInfo(85256)
 
-local csname = spellInfo(35395)
+local csname = C_Spell.GetSpellInfo(35395)
 
 -- main and secondary skill buttons
 local buttons = {}
@@ -593,31 +593,30 @@ end
 
 -- melee range check
 function clcret:CheckRange()
-	local range
-	local inRange = C_Spell.IsSpellInRange
+
+	local inRange
 	
 	if db.rotation.rangePerSkill then
 		-- each skill shows the range of the ability
-		inRange = C_Spell.IsSpellInRange
 		for i = 1, 2 do
-				range = inRange(nq[i], "target")
-			if range ~= nil and range == 0 then
-				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
-			else
+				inRange = C_Spell.IsSpellInRange(dq[1], "target")
+			if inRange then
 				buttons[i].texture:SetVertexColor(1, 1, 1)
+			else
+				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
 			end
 		end
 	else
 		-- both skills show melee range
-		inRange = C_Spell.IsSpellInRange
-		range = inRange(35395, "target")	
-		if range ~= nil and range == 0 then
+		inRange = C_Spell.IsSpellInRange(96231)	
+		
+		if inRange then
 			for i = 1, 2 do
-				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
+				buttons[i].texture:SetVertexColor(1, 1, 1)
 			end
 		else
 			for i = 1, 2 do
-				buttons[i].texture:SetVertexColor(1, 1, 1)
+				buttons[i].texture:SetVertexColor(0.8, 0.1, 0.1)
 			end
 		end
 	end
