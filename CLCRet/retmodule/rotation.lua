@@ -200,6 +200,7 @@ end
 -- C_Spell.IsSpellUsable()
 -- C_Spell.GetSpellCooldown()
 -- IsPlayerSpell() -- use this one to check for talent spells in the tree
+-- Dummy spell for GCD = 61304
 
 -- costs = GetSpellPowerCost(255937)	
 
@@ -368,7 +369,7 @@ local actions = {
 	woa = {
 		id = idWakeOfAshes,
 		GetCD = function()
-			
+
 			-- local strings for less confusing code
 			knownWOA = IsSpellKnownOrOverridesKnown(idWakeOfAshes)
 			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
@@ -1155,10 +1156,7 @@ local actions = {
 	},
 	
 }
-
 -- -----------------------------------------------------------------------------
-
-
 
 local function UpdateQueue()
 	-- normal queue
@@ -1248,6 +1246,7 @@ local function GetStatus()
 	-- -----------------------
 	s_hp = UnitPower("player", 9)
 	s_haste = 1 + UnitSpellHaste("player") / 100
+	
 end
 
 -- remove all talents not available and present in rotation
