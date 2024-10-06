@@ -414,7 +414,8 @@ function clcret:AuraButtonExecSkillVisibleNoCooldown()
 
 	local start, duration = C_Spell.GetSpellCooldown(data.spell)
 	
-	if IsUsableSpell(data.spell) then
+	-- if IsUsableSpell(data.spell) then --changed oct 6th 2024
+	if C_Spell.IsSpellUsable(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
 		button.texture:SetVertexColor(0.3, 0.3, 0.3, 1)
@@ -861,7 +862,6 @@ end
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- FULL DISABLE
--- TODO: Unregister/Register all events here ?
 -- ---------------------------------------------------------------------------------------------------------------------
 function clcret:FullDisableToggle()
 	if db.fullDisable then
