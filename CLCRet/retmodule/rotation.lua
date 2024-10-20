@@ -41,8 +41,6 @@ local idConsecration = 26573
 local idDivineStorm = 53385
 local idHammerOfWrath = 24275
 local idBladeOfJustice = 184575
-local idExecutionSentence = 343527
-local idFinalReckoning = 343721
 
 -- racials
 local idArcaneTorrent = 155145
@@ -50,6 +48,8 @@ local idLightsJudgment = 255647
 
 -- Talents
 -- ids for talent spells (the actual talent in the tree, not the spell in the spellbook)
+local idExecutionSentence = 343527
+local idFinalReckoning = 343721
 local idTemplarStrike = 407480
 local idTemplarSlash = 406647
 local idDivineHammer = 198034
@@ -78,6 +78,9 @@ local idConsecratedBlade = 404834
 -- modify holy power costs
 local idDivineAuxiliary = 406158
 local idDivinePurpose = 408459
+
+-- dummy spells to get fake cd for Hammer of Light
+local idFlashOfLightDummy = 19750
 
 -- buffs
 -- /dump C_UnitAuras.GetBuffDataByIndex("Player", 1)
@@ -1021,14 +1024,14 @@ local actions = {
 			DivineHammerCheck1 = (((s_hp > 4) or s_buff_DivinePurpose or LightsDeliverance) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
 			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose or LightsDeliverance) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
 			
-			if (s1 ~= idHammerOfLightDummy) and usableHOL and IsSpellOverlayed(idHammerOfLight) and (DivineHammerCheck1 or DivineHammerCheck2) then
+			if (s1 ~= idHammerOfLightDummy) and usableHOL and IsSpellOverlayed(idHammerOfLight) then
 				return 0
 			end
 			return 100
 		end,
 		
 		UpdateStatus = function()
-			s_ctime = s_gcd + 1.5
+			-- s_ctime = s_gcd + 1.5
 		end,
 		
 		info = "Hammer of Light (Templar HERO TALENT)",
@@ -1062,7 +1065,7 @@ local actions = {
 		end,
 		
 		info = "Final Reckoning",
-		reqTalent = idFinalReckoning,
+		-- reqTalent = 343721,
 	},
 
 	-- Divine Hammers 
@@ -1085,7 +1088,7 @@ local actions = {
 		
 		info = "Divine Hammer",
 		
-		reqTalent = idDivineHammer,
+		reqTalent = 198034,
 	},
 
 	-- Execution Sentence Boss only
@@ -1121,7 +1124,7 @@ local actions = {
 		
 		info = "Execution Sentence on Boss level mobs only",
 		
-		reqTalent = idExecutionSentence,
+		-- reqTalent = 343527,
 	},
 
 	-- Execution Sentence  
@@ -1157,7 +1160,7 @@ local actions = {
 		
 		info = "Execution Sentence",
 		
-		reqTalent = idExecutionSentence,
+		-- reqTalent = 343527,
 	},
 
 	-- --------------------------------------------
@@ -1207,7 +1210,7 @@ local actions = {
 		
 		info = "Divine Toll",
 		
-		reqTalent = idDivineToll,
+		-- reqTalent = idDivineToll,
 	},
 	
 }
