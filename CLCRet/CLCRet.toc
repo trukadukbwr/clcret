@@ -1,4 +1,4 @@
-## Interface: 110005, 110007
+## Interface: 110007, 111000
 ## Title: |cffF58CBACLCret|r
 ## Notes: Retribution FCFS helper
 ## Author: Trukarak-Blackwater Raiders
