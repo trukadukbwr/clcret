@@ -1,4 +1,4 @@
-## Interface: 110005, 110007
+## Interface: 110007, 111000
 ## Title: |cffF58CBACLCRet Options|r
 ## Notes: A LoD option menu for CLCRet
 ## Author: Trukarak-Blackwater Raiders
