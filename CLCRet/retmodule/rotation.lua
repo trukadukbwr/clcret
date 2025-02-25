@@ -304,16 +304,10 @@ local actions = {
 			-- local strings for less confusing code
 			knownWOA = IsSpellKnownOrOverridesKnown(idWakeOfAshes)
 			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
-			knownDivineHammer = IsPlayerSpell(idDivineHammer)
+
+			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 2) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0))
 			
-			s_cd_DH = GetCooldown(idDivineHammer)
-			inactive_DH = ((s_cd_DH < 105))  -- divine hammer WAS up, on CD, NOT spinning
-			active_DH = (s_cd_DH > 105) -- divine hammer is UP, on CD, Spinning
-			DivineHammerCheck3 = ((knownDivineHammer and inactive_DH and (s_cd_DH > 1)) or (not(knownDivineHammer)))
-			DivineHammerCheck4 = (knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 109)
-			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 1) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0))
-			
-			if (s1 ~= idWakeOfAshes) and usableWOA and (DivineHammerCheck3 or DivineHammerCheck4) and TemplarCheck then
+			if (s1 ~= idWakeOfAshes) and usableWOA and TemplarCheck then
 					return GetCooldown(idWakeOfAshes)
 			end
 			return 100
@@ -922,25 +916,17 @@ local actions = {
 	tv = {
 		id = idTemplarsVerdict,
 		GetCD = function()
-			
+
 			-- Keeping for possible later use
 			-- JudgmentCheck = ((C_Spell.GetSpellCooldown(idJudgment) > 2) or (IsPlayerSpell(idDivineToll) and (C_Spell.GetSpellCooldown(idDivineToll) > 2)))
-						
+	
 			-- local strings for less confusing code
 			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
-			knownDivineHammer = IsPlayerSpell(idDivineHammer)
-			
-			s_cd_DH = GetCooldown(idDivineHammer)
-			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
-			active_DH = (s_cd_DH > 105) -- divine hammer is UP
-			DivineHammerCheck1 = (((s_hp > 2) or s_buff_DivinePurpose) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
-			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
 
-	
-			
-			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (DivineHammerCheck1 or DivineHammerCheck2) then
+			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (s_hp > 2) then
 				return 0
 			end
+			
 			return 100
 		end,
 		
@@ -958,15 +944,8 @@ local actions = {
 			
 			-- local strings for less confusing code
 			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
-			knownDivineHammer = IsPlayerSpell(idDivineHammer)
-			
-			s_cd_DH = GetCooldown(idDivineHammer)
-			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
-			active_DH = (s_cd_DH > 105) -- divine hammer is UP
-			DivineHammerCheck1 = (((s_hp > 4) or s_buff_DivinePurpose) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
-			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
-			
-			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (DivineHammerCheck1 or DivineHammerCheck2) then
+
+			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (s_hp > 2) then
 				return 0
 			end
 			return 100
@@ -1015,15 +994,9 @@ local actions = {
 			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
 			usableHOL = C_Spell.IsSpellUsable(idHammerOfLight)
 			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
-			knownDivineHammer = IsPlayerSpell(idDivineHammer)
-			
-			s_cd_DH = GetCooldown(idDivineHammer)
-			inactive_DH = ((s_cd_DH < 105))  -- divine hammer is NOT up
-			active_DH = (s_cd_DH > 105) -- divine hammer is UP
+	
 			LightsDeliverance = (IsSpellOverlayed(idHammerOfLight) and IsPlayerSpell(idLightsGuidance) and s_buff_LightsDeliverance)
-			DivineHammerCheck1 = (((s_hp > 4) or s_buff_DivinePurpose or LightsDeliverance) and ((knownDivineHammer and inactive_DH) or (not(knownDivineHammer))))
-			DivineHammerCheck2 = (((s_hp > 4) or s_buff_DivinePurpose or LightsDeliverance) and knownDivineHammer and active_DH) and (s_cd_DH > 1) and (s_cd_DH < 105)
-			
+
 			if (s1 ~= idHammerOfLightDummy) and usableHOL and IsSpellOverlayed(idHammerOfLight) then
 				return 0
 			end
@@ -1031,7 +1004,7 @@ local actions = {
 		end,
 		
 		UpdateStatus = function()
-			-- s_ctime = s_gcd + 1.5
+			-- s_ctime = s_gcd + 1.5 -- HoL gcd string causes bug where it displays first, second, or third in line for rotation on GCD, regardless if known or not
 		end,
 		
 		info = "Hammer of Light (Templar HERO TALENT)",
@@ -1088,7 +1061,6 @@ local actions = {
 		
 		info = "Divine Hammer",
 		
-		reqTalent = 198034,
 	},
 
 	-- Execution Sentence Boss only
