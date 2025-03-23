@@ -77,7 +77,7 @@ local idConsecratedBlade = 404834
 
 -- modify holy power costs
 local idDivineAuxiliary = 406158
-local idDivinePurpose = 408459
+local idDivinePurposeTalent = 408459
 
 -- dummy spells to get fake cd for Hammer of Light
 local idFlashOfLightDummy = 19750
@@ -99,6 +99,7 @@ local idForWhomTheBellTolls = 433618
 local idEchoesOfWrath = 423590
 local idLightsDeliverance = 433674
 local idShakeTheHeavens = 431536
+local idAllIn = 1216837 -- Ret Undermine 4 set (Makes spenders cost no Holy power)
 
 -- status vars
 local s1, s2
@@ -304,10 +305,11 @@ local actions = {
 			-- local strings for less confusing code
 			knownWOA = IsSpellKnownOrOverridesKnown(idWakeOfAshes)
 			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
-
-			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 2) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0))
+			DivineHammerHPCheck = ((not(IsPlayerSpell(idDivineHammer)) and (s_hp >= 2)) or (IsPlayerSpell(idDivineHammer) and s_hp >= 3))
+			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and DivineHammerHPCheck) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0))
+			-- TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 2) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0)) **Old Templar check, keep in case we need to revert
 			
-			if (s1 ~= idWakeOfAshes) and usableWOA and TemplarCheck then
+			if (s1 ~= idWakeOfAshes) and usableWOA and TemplarCheck and s_hp < 5 then -- If We need to revert Templar check, then remove s_hp check from this string
 					return GetCooldown(idWakeOfAshes)
 			end
 			return 100
@@ -337,23 +339,36 @@ local actions = {
 			-- local strings for less confusing code
 			knownJ = IsSpellKnownOrOverridesKnown(idJudgment)
 			usableHOL = C_Spell.IsSpellUsable(idHammerOfLight)
-		
+			knownFR = IsPlayerSpell(idFinalReckoning)
+			knownLG = IsPlayerSpell(idLightsGuidance)
+			knownHoL = IsPlayerSpell(idHammerOfLightDummy)
+			
 			local cd, charges = GetJudgmentData()
 			
+			-- Do NOT remove the ES or HoL strings, they exist as a failsafe to prevent rotation suggestion errors when these are not talented
 			if (s1 ~= idJudgment) and knownJ and not(usableHOL) then
 				return GetCooldown(idJudgment)
 			end
+			
+			if (s2 ~= idExecutionSentence) and knownFR then 
+				return 0
+			end
+			
+			if (s2 ~= idHammerOfLightDummy) and knownLG then 
+				return 0
+			end
+			
 			return 100
 		end,
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 				
-				if IsPlayerSpell(idJudgment2) then
-					s_hp = max(3, s_hp + 2)
-				else
-					s_hp = max(3, s_hp + 1)
-				end
+				-- if IsPlayerSpell(idJudgment2) then
+					-- s_hp = max(3, s_hp + 2)
+				-- else
+					-- s_hp = max(3, s_hp + 1)
+				-- end
 				
 				s_JudgmentCharges = max(0, s_JudgmentCharges - 1)
 		end,
@@ -801,10 +816,11 @@ local actions = {
 			-- local strings for less confusing code
 			knownBOJ = IsSpellKnownOrOverridesKnown(idBladeOfJustice)
 			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			DivineHammerCheck = ((s_buff_DivineHammer and s_hp < 3) or not(s_buff_DivineHammer))
 		
 		local cd, charges = GetBoJData()
 
-			if (s1 ~= idBladeOfJustice) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) then
+			if (s1 ~= idBladeOfJustice) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) and DivineHammerCheck then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
@@ -833,10 +849,11 @@ local actions = {
 			-- local strings for less confusing code
 			knownBOJ = IsSpellKnownOrOverridesKnown(idBladeOfJustice)
 			usableTV = C_Spell.IsSpellUsable(idTemplarsVerdict)
+			DivineHammerCheck = ((s_buff_DivineHammer and s_hp < 3) or not(s_buff_DivineHammer))
 		
 		local cd, charges = GetBoJData()
 			
-			if (s1 ~= idBladeOfJustice) and (s_BoJCharges == 2) and (s_hp <= 3) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) then
+			if (s1 ~= idBladeOfJustice) and (s_BoJCharges == 2) and (s_hp <= 3) and knownBOJ and (GetCooldown(idBladeOfJustice) < 1) and DivineHammerCheck then
 				return GetCooldown(idBladeOfJustice)
 			end
 			return 100
@@ -932,6 +949,7 @@ local actions = {
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
+			s_hp = max(3, s_hp - 3)
 		end,
 		
 		info = "Templar's Verdict",
@@ -953,6 +971,7 @@ local actions = {
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
+			s_hp = max(3, s_hp - 3)
 		end,
 		
 		info = "Templar's Verdict at 5 Holy Power",
@@ -1057,41 +1076,50 @@ local actions = {
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
+			s_hp = max(3, s_hp - 3)
 		end,
 		
 		info = "Divine Hammer",
 		
 	},
 
-	-- Execution Sentence Boss only
+	-- Execution Sentence Boss only -- **removed divine aux strings as a redundancy to correct suggestion errors.
 	es_boss = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
 			-- local strings for less confusing code
-			knownES = IsSpellKnownOrOverridesKnown(idExecutionSentence)
-			usableES = C_Spell.IsSpellUsable(idExecutionSentence)
+			knownES = IsPlayerSpell(idExecutionSentence)
+			knownFR = IsPlayerSpell(idFinalReckoning)
+			esCheck = (IsSpellKnownOrOverridesKnown(343527) and (GetCooldown(343527) < 3))
 			
 			-- checks target level 
 			level = UnitLevel("target")
+			Boss = ((level < 0) or (level > 83))
 			
 			-- makes sure you dont overcap holy power too much
 			AuxHPcapCheck = ((not(IsPlayerSpell(406158)) and (s_hp > 2)) or (IsPlayerSpell(406158) and (s_hp < 4)))
 					
-			if (s1 ~= idExecutionSentence) and knownES and usableES and AuxHPcapCheck and ((level < 0) or (level > 81)) then
-				return GetCooldown(idExecutionSentence)
+			if (s1 ~= idExecutionSentence) and knownES and AuxHPcapCheck and not knownFR and esCheck and Boss then
+				return 0
 			end
+			
+			if (s1 ~= idExecutionSentence) and knownFR then
+				return 100
+			end
+			
 			return 100
 		end,
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
 
-				if IsPlayerSpell(idDivineAuxiliary) then
-					s_hp = max(3, s_hp + 3)
-				else
-					s_hp = min(3, s_hp + 0)
-				end
+				-- if IsPlayerSpell(idDivineAuxiliary) then
+					-- s_hp = max(3, s_hp + 3)
+				-- else
+					-- s_hp = min(3, s_hp + 0)
+				-- end
+				
 		end,
 		
 		info = "Execution Sentence on Boss level mobs only",
@@ -1099,14 +1127,15 @@ local actions = {
 		-- reqTalent = 343527,
 	},
 
-	-- Execution Sentence  
+	-- Execution Sentence -- **removed divine aux strings as a redundancy to correct suggestion errors.
 	es = {
 		id = idExecutionSentence,
 		GetCD = function()
 		
 			-- local strings for less confusing code
-			knownES = IsSpellKnownOrOverridesKnown(idExecutionSentence)
-			usableES = C_Spell.IsSpellUsable(idExecutionSentence)
+			knownES = IsPlayerSpell(idExecutionSentence)
+			knownFR = IsPlayerSpell(idFinalReckoning)
+			esCheck = (IsSpellKnownOrOverridesKnown(343527) and (GetCooldown(343527) < 3))
 			
 			-- checks target level 
 			level = UnitLevel("target")
@@ -1114,20 +1143,26 @@ local actions = {
 			-- makes sure you dont overcap holy power too much
 			AuxHPcapCheck = ((not(IsPlayerSpell(406158)) ) or (IsPlayerSpell(406158) and (s_hp < 4)))
 			
-			if (s1 ~= idExecutionSentence) and knownES and usableES and AuxHPcapCheck then
-				return GetCooldown(idExecutionSentence)
+			if (s1 ~= idExecutionSentence) and knownES and AuxHPcapCheck and not knownFR and esCheck then
+				return 100
 			end
+			
+			if (s1 ~= idExecutionSentence) and knownFR then
+				return 100
+			end
+			
 			return 100
 		end,
 		
 		UpdateStatus = function()
 			s_ctime = s_ctime + s_gcd + 1.5
-
-				if IsPlayerSpell(idDivineAuxiliary) then
-					s_hp = max(3, s_hp + 3)
-				else
-					s_hp = min(3, s_hp + 0)
-				end
+				
+				-- if IsPlayerSpell(idDivineAuxiliary) then
+					-- s_hp = max(3, s_hp + 3)
+				-- else
+					-- s_hp = min(3, s_hp + 0)
+				-- end
+				
 		end,
 		
 		info = "Execution Sentence",
@@ -1136,7 +1171,7 @@ local actions = {
 	},
 
 	-- --------------------------------------------
-	-- Divine Purpose Procs
+	-- Divine Purpose Procs / Tier Set Procs
 	-- --------------------------------------------
 
 	-- Templar's Verdict with Divine Purpose
@@ -1157,6 +1192,29 @@ local actions = {
 		end,
 		
 		info = "Templar's Verdict w/ DP Proc",
+	},
+
+	-- Templar's Verdict w/ Undermine 4 set proc (can't lose holy power)
+	tv_4pc = {
+		id = idTemplarsVerdict,
+		GetCD = function()
+
+			-- local strings for less confusing code
+			knownHOL = IsSpellKnownOrOverridesKnown(idHammerOfLight)
+
+			if (s1 ~= idTemplarsVerdict) and not(knownHOL) and (s_hp > 2) and s_buffAllIn then
+				return 0
+			end
+			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			s_hp = max(3, s_hp - 0)
+		end,
+		
+		info = "Templar's Verdict w/Undermine 4 set proc.",
 	},
 
 	-- ----------------------------------
@@ -1229,6 +1287,8 @@ local function GetStatus()
 	s_buff_EchoesOfWrath = C_UnitAuras.GetPlayerAuraBySpellID(idEchoesOfWrath)
 	s_buff_LightsDeliverance = C_UnitAuras.GetPlayerAuraBySpellID(idLightsDeliverance)
 	s_buff_ShakeTheHeavens = C_UnitAuras.GetPlayerAuraBySpellID(idShakeTheHeavens)
+	s_buff_DivineHammer = C_UnitAuras.GetPlayerAuraBySpellID(idDivineHammer)
+	s_buff_AllIn = C_UnitAuras.GetPlayerAuraBySpellID(idAllIn)
 
 	-- retrieves localized debuff spell name
 	local spellInfoJudgment = C_Spell.GetSpellInfo(idJudgment)
@@ -1445,7 +1505,7 @@ local function OnEvent()
 	qTaint = true
 
 	-- DivinePurpose talent
-	local isKnown = IsPlayerSpell(idDivinePurpose)
+	local isKnown = IsPlayerSpell(idDivinePurposeTalent)
 	if isKnown then
 		talent_DivinePurpose = selected
 	end
