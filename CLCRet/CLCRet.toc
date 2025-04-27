@@ -1,4 +1,7 @@
-## Interface: 110007, 111000
+## Interface: 110105, 110107
+## X-Min-Interface: 100207
+## Category: Rotation Helpers
+
 ## Title: |cffF58CBACLCret|r
 ## Notes: Retribution FCFS helper
 ## Author: Trukarak-Blackwater Raiders
@@ -9,7 +12,7 @@
 embeds.xml
 #@end-no-lib-strip@
 
-clcret.lua
+clcret.lua [AllowLoadGameType mainline]
 
 retmodule\index.xml
-rotation.lua
+rotation.lua [AllowLoadGameType mainline]
