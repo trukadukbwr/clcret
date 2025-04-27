@@ -1,4 +1,6 @@
-## Interface: 110007, 111000
+## Interface: 110105, 110107
+## X-Min-Interface: 100207
+
 ## Title: |cffF58CBACLCRet Options|r
 ## Notes: A LoD option menu for CLCRet
 ## Author: Trukarak-Blackwater Raiders
