@@ -1144,7 +1144,7 @@ local actions = {
 			AuxHPcapCheck = ((not(IsPlayerSpell(406158)) ) or (IsPlayerSpell(406158) and (s_hp < 4)))
 			
 			if (s1 ~= idExecutionSentence) and knownES and AuxHPcapCheck and not knownFR and esCheck then
-				return 100
+				return 0
 			end
 			
 			if (s1 ~= idExecutionSentence) and knownFR then
