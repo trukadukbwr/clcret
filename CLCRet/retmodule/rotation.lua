@@ -305,11 +305,11 @@ local actions = {
 			-- local strings for less confusing code
 			knownWOA = IsSpellKnownOrOverridesKnown(idWakeOfAshes)
 			usableWOA = C_Spell.IsSpellUsable(idWakeOfAshes)
-			DivineHammerHPCheck = ((not(IsPlayerSpell(idDivineHammer)) and (s_hp >= 2)) or (IsPlayerSpell(idDivineHammer) and s_hp >= 3))
-			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and DivineHammerHPCheck) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0))
-			-- TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 2) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0)) **Old Templar check, keep in case we need to revert
+			DivineHammerHPCheck = ((not(IsPlayerSpell(idDivineHammer)) and (s_hp >= 2)) or (IsPlayerSpell(idDivineHammer) and s_hp >= 3)) 
+			-- TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and DivineHammerHPCheck) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0)) -- checks for hp for HOL
+			TemplarCheck = ((IsPlayerSpell(idLightsGuidance) and s_hp >= 2) or (not(IsPlayerSpell(idLightsGuidance)) and s_hp >= 0)) -- **Old Templar check, keep in case we need to revert
 			
-			if (s1 ~= idWakeOfAshes) and usableWOA and TemplarCheck and s_hp < 5 then -- If We need to revert Templar check, then remove s_hp check from this string
+			if (s1 ~= idWakeOfAshes) and usableWOA and TemplarCheck then
 					return GetCooldown(idWakeOfAshes)
 			end
 			return 100
