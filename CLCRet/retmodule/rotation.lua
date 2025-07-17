@@ -902,7 +902,8 @@ local actions = {
 		id = idDivineStorm,
 		GetCD = function()
 		
-			dpCheck = (s_buff_DivinePurpose and db.aoeMode)
+			AssistedDS = select(1, C_AssistedCombat.GetNextCastSpell())
+			dpCheck = (s_buff_DivinePurpose and db.aoeMode and (AssistedDS == 53385))
 		
 			if (s1 ~= idDivineStorm) and (s_buff_EmpyreanPowerDS or dpCheck) then
 				return 0
