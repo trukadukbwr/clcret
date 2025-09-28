@@ -20,11 +20,27 @@ xmod.defaults = {
 	version = xmod.version,
 	armsprio = "cru2 cru bs opx skull cs ex ms r s",
 	rangeCheckSkill = "_rangeoff",
+	BlizzMode = false,
+	trinketMode = false,
 }
 
 -- @defines
 --------------------------------------------------------------------------------
 local idGCD = 1464 -- slam for gcd
+
+-- override functions
+local function GetBlizzID()
+    return select(1, C_AssistedCombat.GetNextCastSpell())
+end
+
+local function GetTrinketSpellID(slot)
+    local itemID = GetInventoryItemID("player", slot)
+    if itemID then
+        local _, spellID = C_Item.GetItemSpell(itemID)
+        return spellID
+    end
+    return nil
+end
 
 -- spells
 local idSlam = 1464
@@ -118,8 +134,56 @@ end
 -- costs = GetSpellPowerCost(255937)	
 
 -- (OLD) Do NOT put a check for "GetSpellCooldown(SpellID or Addon Shorthand)" in code, it will cause issues with GCD and displaying it as current recommendation
--- -------------------
--- actions ---------------------------------------------------------------------
+
+local overrideActions = {
+
+	trink1 = {
+		GetID = function()
+			return GetTrinketSpellID(13)
+		end,
+		
+		GetCD = function()
+		
+			local id = GetTrinketSpellID(13)
+			
+			if id and (s1 ~= id) and GetInventoryItemCooldown("player", 13) < 1 then
+				return GetCooldown(id)
+			end			
+			return 100
+		end,
+		
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+		end,
+		
+		info = "",
+	},
+
+	trink2 = {
+		GetID = function()
+			return GetTrinketSpellID(14)
+		end,
+		
+		GetCD = function()
+		
+			local id = GetTrinketSpellID(14)
+			
+			if id and (s1 ~= id) and GetInventoryItemCooldown("player", 14) < 1 then
+				return GetCooldown(id)
+			end			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			
+		end,
+		info = "",
+	},
+
+}
+
+-- actions 
 local actions = {
 	--Arcane Torrent
 	arc = {
@@ -737,18 +801,31 @@ function xmod.Rotation()
 		s_OverpowerCharges = s_OverpowerCharges - 1
 	end
 
-	if debug and debug.enabled then
-		debug:AddBoth("opc", s_OverpowerCharges)
+	-- Trinket Override
+	if db.trinketMode then
+		local cd1 = overrideActions.trink1.GetCD()
+		if cd1 == 0 then
+			s1 = overrideActions.trink1.GetID()
+			overrideActions.trink1.UpdateStatus()
+		end
 	end
 
-	if debug and debug.enabled then
-		debug:AddBoth("ctime", s_ctime)
-		debug:AddBoth("otime", s_otime)
-		debug:AddBoth("gcd", s_gcd)
-		debug:AddBoth("hp", s_hp)
-		debug:AddBoth("haste", s_haste)
-
+	if db.trinketMode then
+		local cd2 = overrideActions.trink2.GetCD()
+		if cd2 == 0 and s1 ~= overrideActions.trink1.GetID() then
+			s1 = overrideActions.trink2.GetID()
+			overrideActions.trink2.UpdateStatus()
+		end
 	end
+	
+	-- Blizz assisted combat api (for non generic modules only)
+	local specID = C_SpecializationInfo.GetSpecialization()
+	local blizzEnabled = clcret.db.profile.rotation.specBlizzMode[specID] or false
+	local idBlizz = GetBlizzID()
+	if blizzEnabled and s1 ~= idHammerOfLight and s1~= overrideActions.trink1.GetID() and s1 ~= overrideActions.trink2.GetID()then
+		s1 = idBlizz
+	end
+
 	s2, action = GetNextAction()
 	if debug and debug.enabled then
 		debug:AddBoth("s2", action)
@@ -762,100 +839,6 @@ local ef = CreateFrame("Frame", "ArmsModuleEventFrame") -- event frame
 ef:Hide()
 local function OnEvent()
 	qTaint = true
-
-
--- Tells addon to use WW in place of slam with fervor talent
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22489, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1680
-	-- end
-
-	-- actions['s'].id = idSlam
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22380, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1464
-	-- end
-
-	-- actions['s'].id = idSlam
-
-	-- _, name, _, selected, available = GetTalentInfoByID(19138, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1464
-	-- end
-
-	-- actions['s'].id = idSlam
-
--- Tells addon to use WW in place of slam with fervor talent w/ crushing assault azerite trait procced
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22489, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1680
-	-- end
-
-	-- actions['sca'].id = idSlam
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22380, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1464
-	-- end
-
-	-- actions['sca'].id = idSlam
-
-	-- _, name, _, selected, available = GetTalentInfoByID(19138, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idSlam = 1464
-	-- end
-
-	-- actions['sca'].id = idSlam
-
--- Tells addon to use Warbreaker in place of Colossus Smash
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22391, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idColossusSmash = 262161
-	-- end
-
-	-- actions['cs'].id = idColossusSmash
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22392, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idColossusSmash = 167105
-	-- end
-
-	-- actions['cs'].id = idColossusSmash
-
-	-- _, name, _, selected, available = GetTalentInfoByID(22362, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idColossusSmash = 167105
-	-- end
-
-	-- actions['cs'].id = idColossusSmash
-
--- Tells addon to use Ravager in place of Bladestorm
-
-	-- _, name, _, selected, available = GetTalentInfoByID(21667, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idBladestorm = 152277
-	-- end
-
-	-- actions['bs'].id = idBladestorm
-
-	-- _, name, _, selected, available = GetTalentInfoByID(21204, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idBladestorm = 227847
-	-- end
-
-	-- actions['bs'].id = idBladestorm
-	-- _, name, _, selected, available = GetTalentInfoByID(21667, GetActiveSpecGroup())
-	-- if name and selected and available then
-		-- idBladestorm = 227847
-	-- end
-
-	-- actions['bs'].id = idBladestorm
-
-
 end
 ef:SetScript("OnEvent", OnEvent)
 ef:RegisterEvent("PLAYER_ENTERING_WORLD")
