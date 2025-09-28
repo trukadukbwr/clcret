@@ -1,7 +1,0 @@
-07/26/2025
--Improved AOE mode detection. 
--Fixed a bug with range detection if you were not specced into Rebuke (For Shame!)
--Added alternating colors to index of abilities to help the user discern different abilities
--Reorganized the options menu: The "skill button" positioning settings were moved to be with the HUD position settings. This should help users figure out how to customize it easier. 
--Removed strings that are likely never to see use under any scenario, due to upcoming changes to Divine Hammer in 11.2
--Updated to .TOC file to indicate the addon is ready for 11.2.0 
