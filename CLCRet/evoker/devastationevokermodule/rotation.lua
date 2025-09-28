@@ -20,11 +20,27 @@ xmod.defaults = {
 	version = xmod.version,
 	devastationprio = "ss d_dr deep_ir fb lf_bo fs d6 deep d lf",
 	rangeCheckSkill = "_rangeoff",
+	BlizzMode = false,
+	trinketMode = false,
 }
 
 -- @defines
 -- ------------------------------------------------------------------------------
 local idGCD = 362969 -- azure strike for gcd
+
+-- override functions
+local function GetBlizzID()
+    return select(1, C_AssistedCombat.GetNextCastSpell())
+end
+
+local function GetTrinketSpellID(slot)
+    local itemID = GetInventoryItemID("player", slot)
+    if itemID then
+        local _, spellID = C_Item.GetItemSpell(itemID)
+        return spellID
+    end
+    return nil
+end
 
 -- spells
 local idAzureStrike = 362969
@@ -128,6 +144,54 @@ end
 
 -- (OLD) Do NOT put a check for "GetSpellCooldown(SpellID or Addon Shorthand)" in code, it will cause issues with GCD and displaying it as current recommendation
 -- -------------------
+
+local overrideActions = {
+
+	trink1 = {
+		GetID = function()
+			return GetTrinketSpellID(13)
+		end,
+		
+		GetCD = function()
+		
+			local id = GetTrinketSpellID(13)
+			
+			if id and (s1 ~= id) and GetInventoryItemCooldown("player", 13) < 1 then
+				return GetCooldown(id)
+			end			
+			return 100
+		end,
+		
+			UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+		end,
+		
+		info = "",
+	},
+
+	trink2 = {
+		GetID = function()
+			return GetTrinketSpellID(14)
+		end,
+		
+		GetCD = function()
+		
+			local id = GetTrinketSpellID(14)
+			
+			if id and (s1 ~= id) and GetInventoryItemCooldown("player", 14) < 1 then
+				return GetCooldown(id)
+			end			
+			return 100
+		end,
+		
+		UpdateStatus = function()
+			s_ctime = s_ctime + s_gcd + 1.5
+			
+		end,
+		info = "",
+	},
+
+}
 
 -- actions ---------------------------------------------------------------------
 local actions = {	
@@ -761,9 +825,33 @@ function xmod.Rotation()
 	
 	if (s1 == idEngulf) then
 	s_EngulfCharges = s_EngulfCharges - 1
-
 	end
 
+-- Trinket Override
+	if db.trinketMode then
+		local cd1 = overrideActions.trink1.GetCD()
+		if cd1 == 0 then
+			s1 = overrideActions.trink1.GetID()
+			overrideActions.trink1.UpdateStatus()
+		end
+	end
+
+	if db.trinketMode then
+		local cd2 = overrideActions.trink2.GetCD()
+		if cd2 == 0 and s1 ~= overrideActions.trink1.GetID() then
+			s1 = overrideActions.trink2.GetID()
+			overrideActions.trink2.UpdateStatus()
+		end
+	end
+	
+	-- Blizz assisted combat api (for non generic modules only)
+	local specID = C_SpecializationInfo.GetSpecialization()
+	local blizzEnabled = clcret.db.profile.rotation.specBlizzMode[specID] or false
+	local idBlizz = GetBlizzID()
+	if blizzEnabled and s1 ~= idHammerOfLight and s1~= overrideActions.trink1.GetID() and s1 ~= overrideActions.trink2.GetID()then
+		s1 = idBlizz
+	end
+	
 	if debug and debug.enabled then
 		debug:AddBoth("ctime", s_ctime)
 		debug:AddBoth("otime", s_otime)
