@@ -1,0 +1,25 @@
+## Interface: 110200, 110205, 110207
+## X-Min-Interface: 100207
+## Category: Rotation Helpers
+
+## Title: |cffF58CBACLCret|r
+## Notes: Multi-class Rotational Helper
+## Author: Trukarak-Blackwater Raiders
+## SavedVariables: clcretDB
+## IconTexture: 626003
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
+clcret.lua [AllowLoadGameType mainline]
+
+generic\genericmodule\index.xml [AllowLoadGameType mainline]
+paladin\retributionpaladinmodule\index.xml [AllowLoadGameType mainline]
+warrior\furywarriormodule\index.xml [AllowLoadGameType mainline]
+warrior\armswarriormodule\index.xml [AllowLoadGameType mainline]
+deathknight\frostdeathknightmodule\index.xml [AllowLoadGameType mainline]
+evoker\devastationevokermodule\index.xml
+evoker\augmentationevokermodule\index.xml
+
+rotation.lua [AllowLoadGameType mainline]

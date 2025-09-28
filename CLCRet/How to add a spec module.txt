@@ -1,0 +1,120 @@
+How to add a class/spec:
+
+1) Build the rotation file, basing it on the generic module rotation file
+*in rotation.lua; Change "xmod.genericmodule" to the correct spec. (example: "xmod.armswarriormodule") There are [2] counts of this
+*in rotation.lua; Change "genericprio" to spec prio (example: "armsprio")[Use prio map below to determine name] There are [3] counts of this
+*add the newly built rotation file to the correct spec module folder
+
+2) In clcret.toc:
+*add new classfolder\specmodule reference in .TOC file
+
+3) Create an options file for specmodule\options.lua
+*You can copy/paste and modify the generic module's options (or any other developed spec's) and moodify, as described below
+*You can also use the generic options file that already exist, no modifcations needed
+
+[OPTIONAL STEPS]
+4) In clcret.lua file:
+*activate spec in the melee spell check map and add a corresponding melee range spell for a melee range check option
+
+5) In specmodule\options.lua:
+*if you used the genericmodule\options.lua as a basis, comment the "Priority" options back in, and comment out the prioritydescription blocks
+
+6) In specmodule\options.lua
+*activate the melee range check variation of the range check options
+
+7) In specmodule\options.lua:
+*activate AOE mode option as needed per spec needs. You can change the spell used to detect AOE mode in spec rotation file
+
+------
+If there's any errors, it's likely either:
+*a module or file name is mistyped or missing "module" completely in the main CLCRet\clcret.lua file (Instead of "armsmodule"it might just be "arms")
+*similar to above (in CLCRet\specmodule\options.lua) "module" might be missing, or the spec at the top might be wrong since the file was manually copy/pasted and edited
+
+If the above is ok, check the prio map (in CLCRet\clcret.lua) for mistakes/typos and the specmodule code block (in CLCRet\rotation.lua) for mistakes/typos
+
+If there's still errors, troubleshoot the new specmodule\rotation.lua file
+------
+
+
+-- Priority Rotation Map
+local PrioMap = {
+
+	PALADIN = {
+		[1] = "hpalprio", 
+		[2] = "protpallyprio", 
+		[3] = "prio",      -- Ret
+	},
+	
+	WARRIOR = {
+		[1] = "armsprio",
+		[2] = "furyprio",
+		[3] = "protwarrprio",
+	},
+	
+	DEATHKNIGHT = {
+		[1] = "blooddkprio",
+		[2] = "frostdkprio",
+		[3] = "unholydkprio",
+	},
+	
+	DEMONHUNTER = {
+		[1] = "havocprio",
+		[2] = "vengeanceprio",
+		-- [3] = "annihilatorprio", -- (Midnight) (Placeholder)
+	},
+	
+	DRUID = {
+		[1] = "balanceprio",
+		[2] = "feralprio",
+		[3] = "guardianprio",
+		[4] = "restorationprio"
+	},
+	
+	EVOKER = {
+		[1] = "devastationprio",
+		[2] = "preservationprio",
+		[3] = "augmentationprio",
+	},
+	
+	HUNTER = {
+		[1] = "beastmasteryprio",
+		[2] = "marksmanshipprio",
+		[3] = "survivalprio",
+	},
+	
+	MAGE = {
+		[1] = "arcaneprio",
+		[2] = "fireprio",
+		[3] = "frostprio",
+	},
+	
+	MONK = {
+		[1] = "brewmasterprio",
+		[2] = "mistweaverprio",
+		[3] = "windwalkerprio",
+	},
+	
+	PRIEST = {
+		[1] = "disciplineprio",
+		[2] = "holyprio",
+		[3] = "shadowprio",
+	},
+	
+	ROGUE = {
+		[1] = "assassinationprio",
+		[2] = "outlawprio",
+		[3] = "subtletyprio",
+	},
+	
+	SHAMAN = {
+		[1] = "elementalprio",
+		[2] = "enhancementprio",
+		[3] = "restorationshamanprio",
+	},
+	
+	WARLOCK = {
+		[1] = "afflictionprio",
+		[2] = "demonologyprio",
+		[3] = "destructionprio",
+	},
+}
