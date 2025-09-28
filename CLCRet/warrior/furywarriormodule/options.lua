@@ -3,7 +3,7 @@ local _, class = UnitClass("player")
 if class ~= "WARRIOR" then return end
 
 local _, xmod = ...
-xmod = xmod.furymodule
+xmod = xmod.furywarriormodule
 local db
 
 local function Get(info)
@@ -105,7 +105,7 @@ function xmod.BuildOptions()
 								type = "header",
 								name = "",
 							},
-						-- aoeMode = { -- Activate AOE mode setting as needed per spec. Spell used to detect AOE is set in spec rotation file!!!
+					-- aoeMode = { -- Activate AOE mode setting as needed per spec. Spell used to detect AOE is set in spec rotation file!!!
 						-- order = 2, 
 						-- type = "group", 
 						-- inline = true, 
@@ -119,6 +119,45 @@ function xmod.BuildOptions()
 							-- },
 						-- },
 					-- },		
+					
+					BlizzMode = {
+						order = 46, 
+						type = "group", 
+						inline = true, 
+						name = "Blizzard's Assisted Combat API",
+						args = {
+							BlizzMode = {
+							type = "toggle",
+							width = "full",
+							name = "Use Blizzard's Assisted Combat API to determine Main Skill priority",
+								get = function(info)
+								local specID = C_SpecializationInfo.GetSpecialization()
+								return clcret.db.profile.rotation.specBlizzMode[specID] or false
+							end,
+								set = function(info, val)
+								local specID = C_SpecializationInfo.GetSpecialization()
+								clcret.db.profile.rotation.specBlizzMode[specID] = val
+							end,
+							}
+						},
+					},	
+					
+					trinketMode = {
+						order = 47, 
+						type = "group", 
+						inline = true, 
+						name = "Trinkets",
+						args = {
+							trinketMode = {
+								type = "toggle", 
+								width = "full", 
+								name = "Suggest usable trinkets as Main Skill priority",
+								get = Get, 
+								set = Set,
+							},
+						},
+					},	
+					
 				},
 			},
 		},
