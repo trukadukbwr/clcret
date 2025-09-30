@@ -1308,10 +1308,14 @@ function xmod.Rotation()
 	local ForgeweaverCheck = ((className == "Forgeweaver Araz") or (className == "Arcane Echo") or (className == "Arcane Manifestation") or (className == "Prioress Murrpray"))
 	
 	-- Used for force Single Targeting on these mobs
-	local stCheck = ((className == "Void Emissary") or (className == "Inquisitor Sigar") or (className == "High Adjudicator Aleez"))
+	local stCheck = ((className == "Void Emissary") or (className == "Inquisitor Sigar") or (className == "High Adjudicator Aleez") or (className == "Binding Javelin"))
 	
-	if ((AssistedDS == 53385) and db.aoeMode and ((level > 0) and (level < 82))) or ((SoulHunterCheck or SoulbinderCheck or ForgeweaverCheck) and (s1 == idTemplarsVerdict) and (AssistedDS == 53385)) then
+	if ((AssistedDS == 53385) and db.aoeMode) and (((level > 0) and (level < 82)) or (SoulHunterCheck or SoulbinderCheck or ForgeweaverCheck) or s_buff_DivinePurpose) then
 		s1 = idDivineStorm
+	end
+	
+	if db.aoeMode and stCheck and (AssistedDS == 53385) then
+		s1 = idTemplarsVerdict
 	end
 	
 	-- Trinket Override
@@ -1378,4 +1382,5 @@ end
 ef:SetScript("OnEvent", OnEvent)
 ef:RegisterEvent("PLAYER_ENTERING_WORLD")
 ef:RegisterEvent("PLAYER_TALENT_UPDATE")
+
 ef:RegisterEvent("PLAYER_LEVEL_UP")
