@@ -202,8 +202,8 @@ for i = 1, MAX_AURAS do
 			alpha = 1,
 			point = "BOTTOM",
 			pointParent = "TOP",
+			
 		},
-		
 	}
 end
 
@@ -994,13 +994,6 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button:ClearAllPoints()
 	button:SetPoint(point, parent, pointParent, offsetx / scale, offsety / scale)
 	
-	-- Create the flipbook texture
-button.procFlipbook = button:CreateTexture("$parentProcFlipbook")
-button.procFlipbook:SetAllPoints(button.texture)
-button.procFlipbook:SetAtlas("SpellActivationAlert_ProcLoopFlipbook")  -- or similar atlas name
-button.procFlipbook:Hide()
-
-
 	if self.LBF then
 		self.LBF:Group("clcret", bfGroup):AddButton(button)
 	end
