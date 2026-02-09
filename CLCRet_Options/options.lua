@@ -919,7 +919,7 @@ for i = 1, MAX_AURAS do
 					order = 4,
 					type = "toggle",
 					name = "Proc Loop Effect",
-					get = function(info) return db.auras[i].procFlipbook end,
+					get = function(info) return db.auras[i].layout.procFlipbook end,
 					set = function(info, val)
 						db.auras[i].layout.procFlipbook = val
 						clcret:UpdateAuraButtonLayout(i)
