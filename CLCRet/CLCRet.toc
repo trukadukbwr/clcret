@@ -1,0 +1,17 @@
+## Interface: 120000, 120100
+## X-Min-Interface: 100207
+## Category: Rotation Helpers
+
+## Title: |cffF58CBACLCret|r
+## Notes: Multi-class Rotational Helper
+## Author: Trukarak-Blackwater Raiders
+## SavedVariables: clcretDB
+## IconTexture: 626003
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
+clcret.lua [AllowLoadGameType mainline]
+generic\genericmodule\index.xml [AllowLoadGameType mainline]
+rotation.lua [AllowLoadGameType mainline]
