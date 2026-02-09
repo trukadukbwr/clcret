@@ -203,6 +203,11 @@ for i = 1, MAX_AURAS do
 			point = "BOTTOM",
 			pointParent = "TOP",
 			
+			procFlipbook = false, 
+			procFlipbook = false,
+	procFlipbookWidth = 4,
+	procFlipbookColor = {1, 0.84, 0, 1},
+			
 		},
 	}
 end
@@ -556,6 +561,17 @@ function clcret:AuraButtonExecItemVisible1Always()
 	
 	button:Show()
 	
+	-- Show the flipbook effect if enabled
+local start, duration = C_Item.GetItemCooldown(data.spell)
+	if db.auras[index].layout.procFlipbook and C_Item.IsUsableItem(data.spell) and not (duration and duration > 0) then
+		button.procFlipbook:Show()
+		button.procFlipbookAnimGroup:Play()
+	else
+		button.procFlipbook:Hide()
+		button.procFlipbookAnimGroup:Stop()
+	end
+	-- -----
+	
 	if C_Item.IsUsableItem(data.spell) and C_Item.IsEquippedItem(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
 	else
@@ -873,6 +889,31 @@ function clcret:UpdateButtonLayout(button, opt)
 	else
 		button.border:Show()
 	end
+	
+	-- Handle procFlipbook visibility
+	if opt.procFlipbook then
+		button.procFlipbook:Show()
+	else
+		button.procFlipbook:Hide()
+	end
+	
+	if button.procFlipbookTop then
+		local width = opt.procFlipbookWidth or 4
+		local color = opt.procFlipbookColor or {1, 0.84, 0, 1}
+		
+		button.procFlipbookTop:SetHeight(width)
+		button.procFlipbookTop:SetVertexColor(unpack(color))
+		
+		button.procFlipbookBottom:SetHeight(width)
+		button.procFlipbookBottom:SetVertexColor(unpack(color))
+		
+		button.procFlipbookLeft:SetWidth(width)
+		button.procFlipbookLeft:SetVertexColor(unpack(color))
+		
+		button.procFlipbookRight:SetWidth(width)
+		button.procFlipbookRight:SetVertexColor(unpack(color))
+	end
+	
 end
 
 -- update scale, alpha, position for main frame
@@ -978,9 +1019,71 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button.border:SetVertexColor(unpack(db.borderColor))
 	button.border:SetTexture(borderType[db.borderType])
 	
+	-- button.cooldown = CreateFrame("Cooldown", "$parentCooldown", button, "CooldownFrameTemplate")
+	-- button.cooldown:SetAllPoints(button)
+	
 	button.cooldown = CreateFrame("Cooldown", "$parentCooldown", button, "CooldownFrameTemplate")
 	button.cooldown:SetAllPoints(button)
 	
+	-- Create border glow frame
+	button.procFlipbook = CreateFrame("Frame", "$parentProcFlipbook", button)
+	button.procFlipbook:SetAllPoints(button)
+	button.procFlipbook:SetFrameLevel(button:GetFrameLevel() + 2)
+	
+	-- Create 4 border textures (top, bottom, left, right)
+	-- Top border
+	button.procFlipbookTop = button.procFlipbook:CreateTexture("$parentBorderTop", "OVERLAY")
+	button.procFlipbookTop:SetHeight(7)
+	button.procFlipbookTop:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+	button.procFlipbookTop:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0, 0)
+	button.procFlipbookTop:SetTexture("Interface\\Cooldown\\starburst")
+	button.procFlipbookTop:SetBlendMode("ADD")
+	button.procFlipbookTop:SetVertexColor(1, 0.84, 0, 1)
+	
+	-- Bottom border
+	button.procFlipbookBottom = button.procFlipbook:CreateTexture("$parentBorderBottom", "OVERLAY")
+	button.procFlipbookBottom:SetHeight(7)
+	button.procFlipbookBottom:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
+	button.procFlipbookBottom:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
+	button.procFlipbookBottom:SetTexture("Interface\\Cooldown\\starburst")
+	button.procFlipbookBottom:SetBlendMode("ADD")
+	button.procFlipbookBottom:SetVertexColor(1, 0.84, 0, 1)
+	
+	-- Left border
+	button.procFlipbookLeft = button.procFlipbook:CreateTexture("$parentBorderLeft", "OVERLAY")
+	button.procFlipbookLeft:SetWidth(7)
+	button.procFlipbookLeft:SetPoint("TOPLEFT", button, "TOPLEFT", 0, 0)
+	button.procFlipbookLeft:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
+	button.procFlipbookLeft:SetTexture("Interface\\Cooldown\\starburst")
+	button.procFlipbookLeft:SetBlendMode("ADD")
+	button.procFlipbookLeft:SetVertexColor(1, 0.84, 0, 1)
+	
+	-- Right border
+	button.procFlipbookRight = button.procFlipbook:CreateTexture("$parentBorderRight", "OVERLAY")
+	button.procFlipbookRight:SetWidth(7)
+	button.procFlipbookRight:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0, 0)
+	button.procFlipbookRight:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
+	button.procFlipbookRight:SetTexture("Interface\\Cooldown\\starburst")
+	button.procFlipbookRight:SetBlendMode("ADD")
+	button.procFlipbookRight:SetVertexColor(1, 0.84, 0, 1)
+	
+	-- Create animation group for pulsing effect
+	local animGroup = button.procFlipbook:CreateAnimationGroup()
+	
+	-- Alpha animation (pulsing brightness)
+	local alpha = animGroup:CreateAnimation("Alpha")
+	alpha:SetDuration(0.6)
+	alpha:SetFromAlpha(0.4)
+	alpha:SetToAlpha(1)
+	alpha:SetSmoothing("IN_OUT")
+	
+	animGroup:SetLooping("REPEAT")
+	button.procFlipbookAnimGroup = animGroup
+	
+	button.procFlipbook:Hide()
+	
+	-- ----
+
 	button.stack = button:CreateFontString("$parentCount", "OVERLAY", "TextStatusBarText")
 	local fontFace, _, fontFlags = button.stack:GetFont()
 	button.stack:SetFont(fontFace, 30, fontFlags)
@@ -1125,6 +1228,7 @@ function clcret:RegisterCLEU()
 		self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	-- end
 end
+
 -- cleu dispatcher wannabe
 function clcret:COMBAT_LOG_EVENT_UNFILTERED(event, timestamp, combatEvent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, spellType, dose, ...)
 
