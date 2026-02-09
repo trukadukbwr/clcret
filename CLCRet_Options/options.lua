@@ -35,16 +35,17 @@ local anchorPoints = {
 -- -------------------
 local execList = {
 	AuraButtonExecaNone = "None",
-	AuraButtonExecSkillVisibleAlways = "Skill always visible",
-	AuraButtonExecSkillVisibleNoCooldown = "Skill visible off CD",
-	AuraButtonExecSkillVisibleOnCooldown = "Skill visible on CD",
-	AuraButtonExecSkillVisibleOnCooldown2 = "---",
-	AuraButtonExecItemVisibleAlways = "Item always visible",
-	AuraButtonExecItemVisibleNoCooldown = "Item visible off CD",
-	AuraButtonExecItemVisibleNoCooldownEquip = "Equipped; visible off CD",
-	AuraButtonExecItemVisibleNoCooldownEquip2 = "---",
-	AuraButtonExecPlayerMissingBuff = "Missing player buff",
-	AuraButtonExecPlayerMissingBuff2 = "---",
+	-- AuraButtonExecSkillVisibleAlways = "Skill always visible",
+	-- AuraButtonExecSkillVisibleNoCooldown = "Skill visible off CD",
+	-- AuraButtonExecSkillVisibleOnCooldown = "Skill visible on CD",
+	-- AuraButtonExecSkillVisibleOnCooldown2 = "---",
+	AuraButtonExecItemVisible1Always = "Item always visible",
+	AuraButtonExecItemVisible2NoCooldown = "Item visible off CD",
+	AuraButtonExecItemVisible3AlwaysEquip = "Equipped; always visible",
+	AuraButtonExecItemVisible4NoCooldownEquip = "Equipped; visible off CD",
+	AuraButtonExecItemVisible5NoCooldownEquip2 = "---",
+	-- AuraButtonExecPlayerMissingBuff = "Missing player buff",
+	-- AuraButtonExecPlayerMissingBuff2 = "---",
 }
 -- index lookup for aura buttons
 local ilt = {}
@@ -57,7 +58,7 @@ local abgs = {}
 function abgs:UpdateAll()
 	clcret:UpdateEnabledAuraButtons()
 	clcret:UpdateAuraButtonsCooldown()
-	clcret:AuraButtonUpdateICD()
+	-- clcret:AuraButtonUpdateICD()
 	clcret:AuraButtonResetTextures()
 end
 -- enabled toggle
@@ -83,10 +84,10 @@ function abgs:SpellGet()
 	local i = ilt[self[2]]
 	
 	-- special case for items since link is used instead of name
-	if (db.auras[i].data.exec == "AuraButtonExecItemVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecItemVisibleNoCooldown") then
+	if (db.auras[i].data.exec == "AuraButtonExecItemVisible1Always") or (db.auras[i].data.exec == "AuraButtonExecItemVisible2NoCooldown") then
 		return db.auras[i].data.spell
-	elseif db.auras[i].data.exec == "AuraButtonExecICDItem" then
-		return C_Spell.GetSpellInfo(db.auras[i].data.spell)
+	-- elseif db.auras[i].data.exec == "AuraButtonExecICDItem" then
+		-- return C_Spell.GetSpellInfo(db.auras[i].data.spell)
 	end
 	return db.auras[i].data.spell
 end
@@ -94,18 +95,18 @@ function abgs:SpellSet(val)
 	local i = ilt[self[2]]
 	
 	-- skill
-	if (db.auras[i].data.exec == "AuraButtonExecSkillVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleNoCooldown") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleOnCooldown") then
-		local name = C_Spell.GetSpellInfo(val)
-		if name then
-			db.auras[i].data.spell = name
-		else
-			db.auras[i].data.spell = ""
-			db.auras[i].enabled = false
-			clcret:AuraButtonHide(i)
-			print("Not a valid spell name or id !")
-		end
+	-- if (db.auras[i].data.exec == "AuraButtonExecSkillVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleNoCooldown") or (db.auras[i].data.exec == "AuraButtonExecSkillVisibleOnCooldown") then
+		-- local name = C_Spell.GetSpellInfo(val)
+		-- if name then
+			-- db.auras[i].data.spell = name
+		-- else
+			-- db.auras[i].data.spell = ""
+			-- db.auras[i].enabled = false
+			-- clcret:AuraButtonHide(i)
+			-- print("Not a valid spell name or id !")
+		-- end
 	-- item
-	elseif (db.auras[i].data.exec == "AuraButtonExecItemVisibleAlways") or (db.auras[i].data.exec == "AuraButtonExecItemVisibleNoCooldown") then
+		if (db.auras[i].data.exec == "AuraButtonExecItemVisible1Always") or (db.auras[i].data.exec == "AuraButtonExecItemVisible2NoCooldown") then
 		local name, link = C_Item.GetItemInfo(val)
 		if name then
 			db.auras[i].data.spell = val
@@ -116,17 +117,17 @@ function abgs:SpellSet(val)
 			print("Not a valid item name or id !")
 		end
 	-- icd stuff
-	elseif (db.auras[i].data.exec == "AuraButtonExecICDItem") then
-		local tid = tonumber(val)
-		local name = C_Spell.GetSpellInfo(tid)
-		if name then
-			db.auras[i].data.spell = tid
-		else
-			db.auras[i].data.spell = ""
-			db.auras[i].enabled = false
-			clcret:AuraButtonHide(i)
-			print("Not a valid spell id!")
-		end
+	-- elseif (db.auras[i].data.exec == "AuraButtonExecICDItem") then
+		-- local tid = tonumber(val)
+		-- local name = C_Spell.GetSpellInfo(tid)
+		-- if name then
+			-- db.auras[i].data.spell = tid
+		-- else
+			-- db.auras[i].data.spell = ""
+			-- db.auras[i].enabled = false
+			-- clcret:AuraButtonHide(i)
+			-- print("Not a valid spell id!")
+		-- end
 	else
 		db.auras[i].data.spell = val
 	end
@@ -144,10 +145,15 @@ function abgs:ExecSet(val)
 	local aura = db.auras[i]
 	
 	-- reset every other setting when this is changed
-	aura.enabled = false
-	aura.data.spell = ""
-	aura.data.unit = ""
-	aura.data.byPlayer = false
+	-- aura.enabled = false
+	
+	if val == "AuraButtonExecaNone" or aura.data.exec == "AuraButtonExecaNone" then
+		aura.data.spell = ""
+	end
+	
+	-- aura.data.spell = ""
+	-- aura.data.unit = ""
+	-- aura.data.byPlayer = false
 	clcret:AuraButtonHide(i)
 	
 	aura.data.exec = val
@@ -155,29 +161,29 @@ function abgs:ExecSet(val)
 	abgs:UpdateAll()
 end
 -- target field
-function abgs:UnitGet()
-	local i = ilt[self[2]]
+-- function abgs:UnitGet()
+	-- local i = ilt[self[2]]
 	
-	return db.auras[i].data.unit
-end
-function abgs:UnitSet(val)
-	local i = ilt[self[2]]
+	-- return db.auras[i].data.unit
+-- end
+-- function abgs:UnitSet(val)
+	-- local i = ilt[self[2]]
 	
-	db.auras[i].data.unit = val
-	abgs:UpdateAll()
-end
+	-- db.auras[i].data.unit = val
+	-- abgs:UpdateAll()
+-- end
 -- cast by player toggle
-function abgs:ByPlayerGet()
-	local i = ilt[self[2]]
+-- function abgs:ByPlayerGet()
+	-- local i = ilt[self[2]]
 	
-	return db.auras[i].data.byPlayer
-end
-function abgs:ByPlayerSet(val)
-	local i = ilt[self[2]]
+	-- return db.auras[i].data.byPlayer
+-- end
+-- function abgs:ByPlayerSet(val)
+	-- local i = ilt[self[2]]
 	
-	db.auras[i].data.byPlayer = val
-	abgs:UpdateAll()
-end
+	-- db.auras[i].data.byPlayer = val
+	-- abgs:UpdateAll()
+-- end
 
 local skillButtonNames = { "Main skill", "Secondary skill" }
 
@@ -500,6 +506,7 @@ local options = {
 			args = {	
 
 
+				
 				__buttonAspect = {
 					type = "header",
 					name = "Button Aspect",
@@ -906,6 +913,20 @@ for i = 1, MAX_AURAS do
 				get = abgs.EnabledGet,
 				set = abgs.EnabledSet,
 			},
+			
+			
+							procFlipbook = {
+					order = 4,
+					type = "toggle",
+					name = "Proc Loop Effect",
+					get = function(info) return db.auras[i].procFlipbook end,
+					set = function(info, val)
+						db.auras[i].layout.procFlipbook = val
+						clcret:UpdateAuraButtonLayout(i)
+					end,
+				},
+			
+			
 			spell = {
 				order = 5,
 				type = "input",
