@@ -204,8 +204,6 @@ for i = 1, MAX_AURAS do
 			pointParent = "TOP",
 		},
 		
-		procFlipbook = false,  -- NEW: toggle for proc effect
-		
 	}
 end
 
@@ -864,13 +862,6 @@ function clcret:UpdateButtonLayout(button, opt)
 	button.stack:ClearAllPoints()
 	button.stack:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 4, 0)
 	
-	if button.layout.procFlipbook then
-    procFlipbook:Show()
-else
-    procFlipbook:Hide()
-end
-
-
 	if db.zoomIcons then
 		button.texture:SetTexCoord(0.05, 0.95, 0.05, 0.95)
 	else
