@@ -186,14 +186,13 @@ local defaults = {
 }
 
 -- blank rest of the auras buttons in default options
-for i = 1, MAX_AURAS do 
+for i = 1, MAX_AURAS + 2 do 
 	defaults.profile.auras[i] = {
 		enabled = false,
 		data = {
 			exec = "AuraButtonExecNone",
 			spell = "",
-			unit = "",
-			byPlayer = true,
+
 		},
 		layout = {
 			size = 30,
@@ -470,6 +469,10 @@ end
 -- ---------------------------------------------------------------------------------------------------------------------
 -- UPDATE FUNCTIONS
 -- ---------------------------------------------------------------------------------------------------------------------
+
+
+
+
 -- just show the button for positioning
 function clcret:AuraButtonExecaNone(index)
 	auraButtons[auraIndex]:Show()
@@ -672,6 +675,8 @@ function clcret:AuraButtonExecItemVisible3AlwaysEquip()
 	end
 end
 
+
+
 -- displayed when a specific spell isn't active on player
 -- function clcret:AuraButtonExecPlayerMissingBuff()
 	-- local index = auraIndex
@@ -867,6 +872,8 @@ end
 
 -- update a given button
 function clcret:UpdateButtonLayout(button, opt)
+	if not button then return end
+	
 	local scale = opt.size / button.defaultSize
 	button:SetScale(scale)
 	button:ClearAllPoints()
@@ -979,10 +986,31 @@ function clcret:InitUI()
 	self.frame:SetScript("OnUpdate", OnUpdate)
 end
 
+-- Auto-detect trinket in slot 13/14
+function clcret:AutoDetectTrinket(trinketSlot)
+	local slotNum = trinketSlot == 1 and 13 or 14
+	local trinketID = GetInventoryItemID("player", slotNum)
+	
+	if trinketID then
+		-- Store the trinket ID in the database
+		local trinketIndex = MAX_AURAS + trinketSlot
+		db.auras[trinketIndex].data.spell = tostring(trinketID)  -- Store as string
+		db.auras[trinketIndex].data.exec = "AuraButtonExecItemVisible2NoCooldown"
+		
+		-- Update the button display
+		clcret:UpdateAuraButtonLayout(trinketIndex)
+		clcret:UpdateEnabledAuraButtons()
+		
+		return trinketID
+	end
+	
+	return nil
+end
+
 -- initialize aura buttons
 function clcret:InitAuraButtons()
 	local data, layout
-	for i = 1, MAX_AURAS do
+	for i = 1, MAX_AURAS + 2 do
 		data = db.auras[i].data
 		layout = db.auras[i].layout
 		auraButtons[i] = self:CreateButton("aura"..i, layout.size, layout.point, clcretFrame, layout.pointParent, layout.x, layout.y, "Auras")
@@ -1175,7 +1203,7 @@ end
 function clcret:UpdateEnabledAuraButtons()
 	numEnabledAuraButtons = 0
 	enabledAuraButtons = {}
-	for i = 1, MAX_AURAS do
+	for i = 1, MAX_AURAS + 2 do
 		if db.auras[i].enabled then
 			numEnabledAuraButtons = numEnabledAuraButtons + 1
 			enabledAuraButtons[numEnabledAuraButtons] = i
