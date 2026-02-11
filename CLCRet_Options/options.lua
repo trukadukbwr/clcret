@@ -44,16 +44,24 @@ local execList = {
 	AuraButtonExecItemVisible3AlwaysEquip = "Equipped; always visible",
 	AuraButtonExecItemVisible4NoCooldownEquip = "Equipped; visible off CD",
 	AuraButtonExecItemVisible5NoCooldownEquip2 = "---",
+	
 	-- AuraButtonExecPlayerMissingBuff = "Missing player buff",
 	-- AuraButtonExecPlayerMissingBuff2 = "---",
 }
 -- index lookup for aura buttons
 local ilt = {}
+
 for i = 1, MAX_AURAS do
-	ilt["aura" .. i] = i
+	ilt["CD Tracker" .. (i + 2)] = i
 end
+
+for i = 1, 2 do
+	ilt["Trinket" .. i] = MAX_AURAS + i
+end
+
 -- aura buttons get/set functions
 local abgs = {}
+
 
 function abgs:UpdateAll()
 	clcret:UpdateEnabledAuraButtons()
@@ -61,24 +69,55 @@ function abgs:UpdateAll()
 	-- clcret:AuraButtonUpdateICD()
 	clcret:AuraButtonResetTextures()
 end
+
 -- enabled toggle
 function abgs:EnabledGet()
 	local i = ilt[self[2]]
 	
 	return db.auras[i].enabled
 end
+
 function abgs:EnabledSet(val)
 	local i = ilt[self[2]]
 	
 	clcret.temp = info
+	
+	-- Auto-detect trinket if enabling a trinket tracker
+	if val and i > MAX_AURAS then
+		local trinketSlot = i - MAX_AURAS
+		local trinketID = clcret:AutoDetectTrinket(trinketSlot)
+		if not trinketID then
+			val = false
+			print("No trinket equipped in slot " .. (trinketSlot == 1 and "13" or "14"))
+		end
+		
+		
+	end
+	
 	if db.auras[i].data.spell == "" then
 		val = false
 		print("Not a valid spell name/id or buff name!")
 	end
+	
 	db.auras[i].enabled = val
 	if not val then clcret:AuraButtonHide(i) end
 	abgs:UpdateAll()
 end
+
+-- function abgs:EnabledSet(val)
+	-- local i = ilt[self[2]]
+	
+	-- clcret.temp = info
+	-- if db.auras[i].data.spell == "" then
+		-- val = false
+		-- print("Not a valid spell name/id or buff name!")
+	-- end
+	-- db.auras[i].enabled = val
+	-- if not val then clcret:AuraButtonHide(i) end
+	-- abgs:UpdateAll()
+-- end
+
+
 -- id/name field
 function abgs:SpellGet()
 	local i = ilt[self[2]]
@@ -134,6 +173,63 @@ function abgs:SpellSet(val)
 	
 	abgs:UpdateAll()
 end
+
+
+-- ilt copy refera
+-- local ilt = {}
+
+-- for i = 1, MAX_AURAS do
+	-- ilt["CD Tracker" .. (i + 2)] = i
+-- end
+
+
+-- trinket type select (separate from CD tracker)
+function abgs:TrinketExecGet()
+	local i = ilt[self[2]]
+	if i and db.auras[i] then
+		return db.auras[i].data.exec
+	end
+	return "AuraButtonExecaNone"
+end
+
+function abgs:TrinketExecSet(val)
+	local i = ilt[self[2]]
+	if not i or not db.auras[i] then return end
+	
+	local aura = db.auras[i]
+	
+	if val == "AuraButtonExecaNone" or aura.data.exec == "AuraButtonExecaNone" then
+		aura.data.spell = ""
+	end
+	
+	clcret:AuraButtonHide(i)
+	aura.data.exec = val
+	abgs:UpdateAll()
+end
+
+
+-- trinket type select
+-- function abgs:TrinketExecGet()
+	-- local i = ilt[self[2]]
+	
+	-- return db.auras[i].data.exec
+-- end
+-- function abgs:TrinketExecSet(val)
+	-- local i = ilt[self[2]]
+	-- local aura = db.auras[i]
+	
+	-- if val == "AuraButtonExecaNone" or aura.data.exec == "AuraButtonExecaNone" then
+		-- aura.data.spell = ""
+	-- end
+	
+	-- clcret:AuraButtonHide(i)
+	
+	-- aura.data.exec = val
+	
+	-- abgs:UpdateAll()
+-- end
+
+
 -- type select
 function abgs:ExecGet()
 	local i = ilt[self[2]]
@@ -821,26 +917,52 @@ local options = {
 		rotation = clcret.RR_BuildOptions(),
 		
 		-- item tracking
+		
+			-- trinkets = {
+		-- order = 29,
+		-- name = "Trinket Trackers",
+		-- type = "group",
+		-- args = {
+			-- ____info = {
+				-- order = 1,
+				-- type = "description",
+				-- name = "Auto-tracking for equipped trinkets in slots 13 & 14.",
+			-- },
+			-- ____infospacer = {
+				-- order = 2,
+				-- type = "description",
+				-- name = "",
+			-- },
+		-- },
+	-- },
+		
+		
+		
+		
 		auras = {
 			order = 30,
 			name = "CD Trackers",
 			type = "group",
 			args = {
-				____info = {
-					order = 1,
-					type = "description",
-					name = "Click the little Plus sign for Consumable/Item CD tracking options.",
-				},
-				____infospacer = {
-					order = 2,
-					type = "description",
-					name = "",
-				},
-				____moreinfo = {
-					order = 5,
-					type = "description",
-					name = "These can be used to track Consumables or Item CDs. They can NOT track buffs or spells.",
-				},
+			
+		
+			
+					____info = {
+						order = 1,
+						type = "description",
+						name = "Click the little Plus sign for Consumable/Item CD tracking options.",
+					},
+					____infospacer = {
+						order = 2,
+						type = "description",
+						name = "",
+					},
+					____moreinfo = {
+						order = 5,
+						type = "description",
+						name = "These can be used to track Consumables or Item CDs. They can NOT track buffs or spells.",
+					},
+				
 			},
 		},
 	
@@ -882,15 +1004,201 @@ for i = 1, GetNumSpecializations() do
     }
 end
 
+-- trinket aura duplicate
+-- for f = 1, 2 do
+
+
+-- local i = (MAX_AURAS + f)
+
+
+-- options.args.auras.args
+
+		
+
+
+
+-- end
+
+
 -- add the aura buttons to options
 for i = 1, MAX_AURAS do
 	-- aura options
-	options.args.auras.args["aura" .. i] = {
-		order = i + 10,
+	
+	
+local f = (i + 2)
+
+
+		options.args.auras.args["Trinket" .. 1] = {
+		order = 5.1,
+		type = "group",
+		name = "Trinket " .. 1,
+		args = {
+		
+			_aurainfo = {
+					order = 1,
+					type = "description",
+					name = "-This tracks the trinket in the Top Slot (Slot 13)",
+				},
+			_auraHead = {
+					order = 1,
+					type = "header",
+					name = "Tracking Options",
+				},
+			enabled = {
+				order = 1,
+				type = "toggle",
+				name = "Enabled",
+				get = Get,
+				set = Set,
+			},
+									procFlipbook = {
+					order = 4,
+					type = "toggle",
+					name = "Proc Loop Effect",
+					get = function(info) return db.auras[i].layout.procFlipbook end,
+					set = function(info, val)
+						db.auras[i].layout.procFlipbook = val
+						clcret:UpdateAuraButtonLayout(i)
+					end,
+				},
+			
+						procFlipbook = {
+				order = 4,
+				type = "toggle",
+				name = "Proc Loop Effect",
+				get = function(info) return db.auras[i].layout.procFlipbook end,
+				set = function(info, val)
+					db.auras[i].layout.procFlipbook = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			
+			procFlipbookWidth = {
+				order = 10,
+				type = "range",
+				name = "Glow Border Width",
+				min = 1,
+				max = 10,
+				step = 1,
+				get = function(info) return db.auras[i].layout.procFlipbookWidth end,
+				set = function(info, val)
+					db.auras[i].layout.procFlipbookWidth = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			
+			procFlipbookColor = {
+				order = 4.2,
+				type = "color",
+				name = "Glow Color",
+				hasAlpha = true,
+				get = function(info) return unpack(db.auras[i].layout.procFlipbookColor) end,
+				set = function(info, r, g, b, a)
+					db.auras[i].layout.procFlipbookColor = {r, g, b, a}
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			
+
+			exec = {
+				order = 4.1,
+				type = "select",
+				name = "Type",
+				get = abgs.TrinketExecGet,
+				set = abgs.TrinketExecSet,
+				values = execList,
+			},
+			
+			_auraSpace = {
+					order = 18,
+					type = "description",
+					name = "",
+				},
+			___auraHead = {
+					order = 18,
+					type = "header",
+					name = "Size & Positioning",
+				},
+			size = {
+				order = 20,
+				type = "range",
+				name = "Size",
+				min = 1,
+				max = 300,
+				step = 1,
+				get = function(info) return db.auras[i].layout.size end,
+				set = function(info, val)
+					db.auras[i].layout.size = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			_sizSpace = {
+					order = 21,
+					type = "description",
+					name = "",
+				},
+			anchor = {
+				order = 23,
+				type = "select",
+				name = "Anchor",
+				get = function(info) return db.auras[i].layout.point end,
+				set = function(info, val)
+					db.auras[i].layout.point = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+				values = anchorPoints,
+			},
+			anchorTo = {
+				order = 25,
+				type = "select",
+				name = "Anchor To",
+				get = function(info) return db.auras[i].layout.pointParent end,
+				set = function(info, val)
+					db.auras[i].layout.pointParent = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+				values = anchorPoints,
+			},
+			x = {
+				order = 27,
+				type = "range",
+				name = "X",
+				min = -1000,
+				max = 1000,
+				step = 1,
+				get = function(info) return db.auras[i].layout.x end,
+				set = function(info, val)
+					db.auras[i].layout.x = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			y = {
+				order = 28,
+				type = "range",
+				name = "Y",
+				min = -1000,
+				max = 1000,
+				step = 1,
+				get = function(info) return db.auras[i].layout.y end,
+				set = function(info, val)
+					db.auras[i].layout.y = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+		
+		
+	}
+}
+
+
+
+	options.args.auras.args["CD Tracker" .. f] = {
+		order = f + 10,
 		type = "group",
 		name = "CD Tracker " .. i,
 		args = {
-		
+			
+			
 			_aurainfo = {
 					order = 1,
 					type = "description",
@@ -914,7 +1222,7 @@ for i = 1, MAX_AURAS do
 				set = abgs.EnabledSet,
 			},
 			
-			
+	
 							procFlipbook = {
 					order = 4,
 					type = "toggle",
@@ -926,6 +1234,42 @@ for i = 1, MAX_AURAS do
 					end,
 				},
 			
+						procFlipbook = {
+				order = 4,
+				type = "toggle",
+				name = "Proc Loop Effect",
+				get = function(info) return db.auras[i].layout.procFlipbook end,
+				set = function(info, val)
+					db.auras[i].layout.procFlipbook = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			
+			procFlipbookWidth = {
+				order = 10,
+				type = "range",
+				name = "Glow Border Width",
+				min = 1,
+				max = 10,
+				step = 1,
+				get = function(info) return db.auras[i].layout.procFlipbookWidth end,
+				set = function(info, val)
+					db.auras[i].layout.procFlipbookWidth = val
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
+			
+			procFlipbookColor = {
+				order = 4.2,
+				type = "color",
+				name = "Glow Color",
+				hasAlpha = true,
+				get = function(info) return unpack(db.auras[i].layout.procFlipbookColor) end,
+				set = function(info, r, g, b, a)
+					db.auras[i].layout.procFlipbookColor = {r, g, b, a}
+					clcret:UpdateAuraButtonLayout(i)
+				end,
+			},
 			
 			spell = {
 				order = 5,
@@ -935,7 +1279,7 @@ for i = 1, MAX_AURAS do
 				set = abgs.SpellSet,
 			},
 			exec = {
-				order = 10,
+				order = 4.1,
 				type = "select",
 				name = "Type",
 				get = abgs.ExecGet,
@@ -1019,8 +1363,188 @@ for i = 1, MAX_AURAS do
 				end,
 			},
 		},
+	
 	}
 end
+
+
+-- for i = 1, 2 do
+	-- trinket options
+	-- options.args.auras.args["Trinket" .. i] = {
+		-- order = i + 30,
+		-- type = "group",
+		-- name = "Trinket " .. i,
+		-- args = {
+		
+			-- _aurainfot = {
+					-- order = 1,
+					-- type = "description",
+					-- name = "-These are cooldown watchers. You can select an item or consumable to watch.",
+				-- },
+			-- _aurainfo2 = {
+					-- order = 1,
+					-- type = "description",
+					-- name = "-You can NOT track Buffs/Debuffs or Spells.",
+				-- },
+			-- _auraHeadt = {
+					-- order = 1,
+					-- type = "header",
+					-- name = "Item Trackers",
+				-- },
+			-- enabledt = {
+				-- order = 1,
+				-- type = "toggle",
+				-- name = "Enabled",
+				-- get = abgs.EnabledGet,
+				-- set = abgs.EnabledSet,
+			-- },
+			
+	
+					-- procFlipbook = {
+					-- order = 4,
+					-- type = "toggle",
+					-- name = "Proc Loop Effect",
+					-- get = function(info) return db.auras[i].layout.procFlipbook end,
+					-- set = function(info, val)
+						-- db.auras[i].layout.procFlipbook = val
+						-- clcret:UpdateAuraButtonLayout(i)
+					-- end,
+				-- },
+			
+				-- procFlipbook = {
+				-- order = 4,
+				-- type = "toggle",
+				-- name = "Proc Loop Effect",
+				-- get = function(info) return db.auras[i].layout.procFlipbook end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.procFlipbook = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			
+			-- procFlipbookWidth = {
+				-- order = 10,
+				-- type = "range",
+				-- name = "Glow Border Width",
+				-- min = 1,
+				-- max = 10,
+				-- step = 1,
+				-- get = function(info) return db.auras[i].layout.procFlipbookWidth end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.procFlipbookWidth = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			
+			-- procFlipbookColor = {
+				-- order = 4.2,
+				-- type = "color",
+				-- name = "Glow Color",
+				-- hasAlpha = true,
+				-- get = function(info) return unpack(db.auras[i].layout.procFlipbookColor) end,
+				-- set = function(info, r, g, b, a)
+					-- db.auras[i].layout.procFlipbookColor = {r, g, b, a}
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			
+			-- spell = {
+				-- order = 5,
+				-- type = "input",
+				-- name = "Item name/id to track",
+				-- get = abgs.SpellGet,
+				-- set = abgs.SpellSet,
+			-- },
+			-- exec = {
+				-- order = 4.1,
+				-- type = "select",
+				-- name = "Type",
+				-- get = abgs.ExecGet,
+				-- set = abgs.ExecSet,
+				-- values = execList,
+			-- },
+			-- _auraSpace = {
+					-- order = 18,
+					-- type = "description",
+					-- name = "",
+				-- },
+			-- ___auraHead = {
+					-- order = 18,
+					-- type = "header",
+					-- name = "Size & Positioning",
+				-- },
+			-- size = {
+				-- order = 20,
+				-- type = "range",
+				-- name = "Size",
+				-- min = 1,
+				-- max = 300,
+				-- step = 1,
+				-- get = function(info) return db.auras[i].layout.size end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.size = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			-- _sizSpace = {
+					-- order = 21,
+					-- type = "description",
+					-- name = "",
+				-- },
+			-- anchor = {
+				-- order = 23,
+				-- type = "select",
+				-- name = "Anchor",
+				-- get = function(info) return db.auras[i].layout.point end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.point = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+				-- values = anchorPoints,
+			-- },
+			-- anchorTo = {
+				-- order = 25,
+				-- type = "select",
+				-- name = "Anchor To",
+				-- get = function(info) return db.auras[i].layout.pointParent end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.pointParent = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+				-- values = anchorPoints,
+			-- },
+			-- x = {
+				-- order = 27,
+				-- type = "range",
+				-- name = "X",
+				-- min = -1000,
+				-- max = 1000,
+				-- step = 1,
+				-- get = function(info) return db.auras[i].layout.x end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.x = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			-- y = {
+				-- order = 28,
+				-- type = "range",
+				-- name = "Y",
+				-- min = -1000,
+				-- max = 1000,
+				-- step = 1,
+				-- get = function(info) return db.auras[i].layout.y end,
+				-- set = function(info, val)
+					-- db.auras[i].layout.y = val
+					-- clcret:UpdateAuraButtonLayout(i)
+				-- end,
+			-- },
+			
+			
+		-- },
+	
+	-- }
+-- end
 
 	local AceConfig = LibStub("AceConfig-3.0")
 	AceConfig:RegisterOptionsTable("CLCRet", options)
