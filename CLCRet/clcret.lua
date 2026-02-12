@@ -203,7 +203,6 @@ for i = 1, MAX_AURAS + 2 do
 			pointParent = "TOP",
 			
 			procFlipbook = false, 
-			procFlipbook = false,
 	procFlipbookWidth = 4,
 	procFlipbookColor = {1, 0.84, 0, 1},
 			
@@ -588,7 +587,7 @@ function clcret:AuraButtonExecItemVisible1Always()
 	button:Show()
 	
 	-- Show the flipbook effect if enabled
-local start, duration = C_Item.GetItemCooldown(data.spell)
+	local start, duration = C_Item.GetItemCooldown(data.spell)
 	if db.auras[index].layout.procFlipbook and C_Item.IsUsableItem(data.spell) and not (duration and duration > 0) then
 		button.procFlipbook:Show()
 		button.procFlipbookAnimGroup:Play()
@@ -636,6 +635,16 @@ function clcret:AuraButtonExecItemVisible2NoCooldown()
 		button:Show()
 	end
 	
+		-- Show the flipbook effect if enabled
+	local start, duration = C_Item.GetItemCooldown(data.spell)
+	if db.auras[index].layout.procFlipbook and C_Item.IsUsableItem(data.spell) and not (duration and duration > 0) then
+		button.procFlipbook:Show()
+		button.procFlipbookAnimGroup:Play()
+	else
+		button.procFlipbook:Hide()
+		button.procFlipbookAnimGroup:Stop()
+	end
+	-- -----
 	
 end
 -- shows shows an Equipped usable item only when off cooldown
@@ -664,6 +673,19 @@ function clcret:AuraButtonExecItemVisible4NoCooldownEquip()
 		button:Show()
 	end
 	
+	
+		-- Show the flipbook effect if enabled
+	local start, duration = C_Item.GetItemCooldown(data.spell)
+	if db.auras[index].layout.procFlipbook and C_Item.IsUsableItem(data.spell) and not (duration and duration > 0) then
+		button.procFlipbook:Show()
+		button.procFlipbookAnimGroup:Play()
+	else
+		button.procFlipbook:Hide()
+		button.procFlipbookAnimGroup:Stop()
+	end
+	-- -----
+	
+	
 	if not C_Item.IsEquippedItem(data.spell) then
 		button:Hide()
 	end
@@ -682,6 +704,19 @@ function clcret:AuraButtonExecItemVisible3AlwaysEquip()
 	end
 	
 	button:Show()
+	
+	
+		-- Show the flipbook effect if enabled
+	local start, duration = C_Item.GetItemCooldown(data.spell)
+	if db.auras[index].layout.procFlipbook and C_Item.IsUsableItem(data.spell) and not (duration and duration > 0) then
+		button.procFlipbook:Show()
+		button.procFlipbookAnimGroup:Play()
+	else
+		button.procFlipbook:Hide()
+		button.procFlipbookAnimGroup:Stop()
+	end
+	-- -----
+	
 	
 	if C_Item.IsUsableItem(data.spell) and C_Item.IsEquippedItem(data.spell) then
 		button.texture:SetVertexColor(1, 1, 1, 1)
@@ -822,17 +857,39 @@ function clcret:DoNothing()
 end
 
 -- loads the rotation from the spec modules
-function clcret:CheckQueueRotation()
+-- function clcret:CheckQueueRotation()
 
+	-- dq[1], dq[2] = clcret.Rotation()
+	
+	-- spellInfo = C_Spell.GetSpellInfo
+	
+	-- nq[1] = spellInfo(dq[1])
+	-- nq[2] = spellInfo(dq[2])
+	
+	-- self:UpdateUI()
+-- end
+
+function clcret:CheckQueueRotation()
 	dq[1], dq[2] = clcret.Rotation()
 	
 	spellInfo = C_Spell.GetSpellInfo
 	
-	nq[1] = spellInfo(dq[1])
-	nq[2] = spellInfo(dq[2])
+	-- Only get spell info if dq values are valid
+	if dq[1] then
+		nq[1] = spellInfo(dq[1])
+	else
+		nq[1] = nil
+	end
+	
+	if dq[2] then
+		nq[2] = spellInfo(dq[2])
+	else
+		nq[2] = nil
+	end
 	
 	self:UpdateUI()
 end
+
 
 -- ---------------------------------------------------------------------------------------------------------------------
 -- ENABLE/DISABLE
@@ -1040,7 +1097,7 @@ function clcret:InitAuraButtons()
 	for i = 1, MAX_AURAS + 2 do
 		data = db.auras[i].data
 		layout = db.auras[i].layout
-		auraButtons[i] = self:CreateButton("aura"..i, layout.size, layout.point, clcretFrame, layout.pointParent, layout.x, layout.y, "Auras")
+		auraButtons[i] = self:CreateButton("aura"..i, layout.size, layout.point, clcretFrame, layout.pointParent, layout.x, layout.y, "Auras", nil, layout.procFlipbookColor)
 		auraButtons[i].start = 0
 		auraButtons[i].duration = 0
 		auraButtons[i].expirationTime = 0
@@ -1048,8 +1105,9 @@ function clcret:InitAuraButtons()
 	end
 end
 
+
 -- create button
-function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, offsety, bfGroup, isChecked)
+function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, offsety, bfGroup, isChecked, glowColor)
 	name = "clcret" .. name
 	local button
 	if isChecked then
@@ -1060,6 +1118,8 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 		button = CreateFrame("Button", name , parent)
 	end
 	button:EnableMouse(false)
+	
+	local color = glowColor or {1, 0.84, 0, 1}
 	
 	button:SetWidth(64)
 	button:SetHeight(64)
@@ -1093,7 +1153,7 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button.procFlipbookTop:SetPoint("TOPRIGHT", button, "TOPRIGHT", 0, 0)
 	button.procFlipbookTop:SetTexture("Interface\\Cooldown\\starburst")
 	button.procFlipbookTop:SetBlendMode("ADD")
-	button.procFlipbookTop:SetVertexColor(1, 0.84, 0, 1)
+button.procFlipbookTop:SetVertexColor(unpack(color))
 	
 	-- Bottom border
 	button.procFlipbookBottom = button.procFlipbook:CreateTexture("$parentBorderBottom", "OVERLAY")
@@ -1102,7 +1162,7 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button.procFlipbookBottom:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
 	button.procFlipbookBottom:SetTexture("Interface\\Cooldown\\starburst")
 	button.procFlipbookBottom:SetBlendMode("ADD")
-	button.procFlipbookBottom:SetVertexColor(1, 0.84, 0, 1)
+	button.procFlipbookBottom:SetVertexColor(unpack(color))
 	
 	-- Left border
 	button.procFlipbookLeft = button.procFlipbook:CreateTexture("$parentBorderLeft", "OVERLAY")
@@ -1111,7 +1171,7 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button.procFlipbookLeft:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 0, 0)
 	button.procFlipbookLeft:SetTexture("Interface\\Cooldown\\starburst")
 	button.procFlipbookLeft:SetBlendMode("ADD")
-	button.procFlipbookLeft:SetVertexColor(1, 0.84, 0, 1)
+	button.procFlipbookLeft:SetVertexColor(unpack(color))
 	
 	-- Right border
 	button.procFlipbookRight = button.procFlipbook:CreateTexture("$parentBorderRight", "OVERLAY")
@@ -1120,7 +1180,7 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	button.procFlipbookRight:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0, 0)
 	button.procFlipbookRight:SetTexture("Interface\\Cooldown\\starburst")
 	button.procFlipbookRight:SetBlendMode("ADD")
-	button.procFlipbookRight:SetVertexColor(1, 0.84, 0, 1)
+	button.procFlipbookRight:SetVertexColor(unpack(color))
 	
 	-- Create animation group for pulsing effect
 	local animGroup = button.procFlipbook:CreateAnimationGroup()
@@ -1128,9 +1188,15 @@ function clcret:CreateButton(name, size, point, parent, pointParent, offsetx, of
 	-- Alpha animation (pulsing brightness)
 	local alpha = animGroup:CreateAnimation("Alpha")
 	alpha:SetDuration(0.6)
-	alpha:SetFromAlpha(0.4)
+	alpha:SetFromAlpha(0.3)
 	alpha:SetToAlpha(1)
-	alpha:SetSmoothing("IN_OUT")
+	alpha:SetSmoothing("OUT")
+	
+	-- Scale animation (pulsing size)
+local scale = animGroup:CreateAnimation("Scale")
+scale:SetDuration(0.6)
+scale:SetScale(1.05, 1.05)  -- Grows to 105% size
+scale:SetSmoothing("OUT")
 	
 	animGroup:SetLooping("REPEAT")
 	button.procFlipbookAnimGroup = animGroup
