@@ -302,6 +302,7 @@ function clcret:OnInitialize()
 	-- this would give a proper init
 	self:RegisterEvent("QUEST_LOG_UPDATE")	
 	self:RegisterEvent("ACTIVE_PLAYER_SPECIALIZATION_CHANGED")
+	self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 end
 
 function clcret:QUEST_LOG_UPDATE()
@@ -471,6 +472,28 @@ end
 -- ---------------------------------------------------------------------------------------------------------------------
 
 
+function clcret:PLAYER_EQUIPMENT_CHANGED()
+	if not addonEnabled then return end
+	
+	-- Check both trinket slots
+	for trinketSlot = 1, 2 do
+		local trinketIndex = MAX_AURAS + trinketSlot
+		
+		-- Only update if the trinket is enabled
+		if db.auras[trinketIndex].enabled then
+			local slotNum = trinketSlot == 1 and 13 or 14
+			local newTrinketID = GetInventoryItemID("player", slotNum)
+			local currentTrinketID = tonumber(db.auras[trinketIndex].data.spell)
+			
+			-- If trinket changed, update it
+			if newTrinketID and newTrinketID ~= currentTrinketID then
+				db.auras[trinketIndex].data.spell = tostring(newTrinketID)
+				clcret:UpdateAuraButtonLayout(trinketIndex)
+				clcret:AuraButtonResetTexture(trinketIndex)
+			end
+		end
+	end
+end
 
 
 -- just show the button for positioning
@@ -612,6 +635,7 @@ function clcret:AuraButtonExecItemVisible2NoCooldown()
 	else
 		button:Show()
 	end
+	
 	
 end
 -- shows shows an Equipped usable item only when off cooldown
@@ -992,12 +1016,14 @@ function clcret:AutoDetectTrinket(trinketSlot)
 	local trinketID = GetInventoryItemID("player", slotNum)
 	
 	if trinketID then
-		-- Store the trinket ID in the database
 		local trinketIndex = MAX_AURAS + trinketSlot
-		db.auras[trinketIndex].data.spell = tostring(trinketID)  -- Store as string
-		db.auras[trinketIndex].data.exec = "AuraButtonExecItemVisible2NoCooldown"
+		db.auras[trinketIndex].data.spell = tostring(trinketID)
 		
-		-- Update the button display
+		-- Only set exec type if it's not already set (preserve user's choice)
+		if db.auras[trinketIndex].data.exec == "AuraButtonExecaNone" then
+			db.auras[trinketIndex].data.exec = "AuraButtonExecItemVisible2NoCooldown"
+		end
+		
 		clcret:UpdateAuraButtonLayout(trinketIndex)
 		clcret:UpdateEnabledAuraButtons()
 		
@@ -1006,6 +1032,7 @@ function clcret:AutoDetectTrinket(trinketSlot)
 	
 	return nil
 end
+
 
 -- initialize aura buttons
 function clcret:InitAuraButtons()
@@ -1169,6 +1196,8 @@ function clcret:FullDisableToggle()
 		self:UnregisterEvent("UNIT_FACTION")
 		
 		self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+		
+		self:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
 		
 		-- disable
 		self:CLCRETDisable()
