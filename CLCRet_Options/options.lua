@@ -2,7 +2,7 @@
 
 clcret.optionsLoaded = true
 
-local MAX_AURAS = 10
+local trackerMax = 10
 
 local db = clcret.db.profile
 -- local root
@@ -31,44 +31,44 @@ local anchorPoints = {
 }
 
 -- -------------------
--- Aura Button stuff
+-- tracker Button stuff
 -- -------------------
 local execList = {
-	AuraButtonExecaNone = "None",
-	AuraButtonExecItemVisible1Always = "Item always visible",
-	AuraButtonExecItemVisible2NoCooldown = "Item visible off CD",
-	AuraButtonExecItemVisible3AlwaysEquip = "Equipped; always visible",
-	AuraButtonExecItemVisible4NoCooldownEquip = "Equipped; visible off CD",
-	AuraButtonExecItemVisible5NoCooldownEquip2 = "---",
+	TrackerIconExecaNone = "None",
+	TrackerIconExecItemVisible1Always = "Item always visible",
+	TrackerIconExecItemVisible2NoCooldown = "Item visible off CD",
+	TrackerIconExecItemVisible3AlwaysEquip = "Equipped; always visible",
+	TrackerIconExecItemVisible4NoCooldownEquip = "Equipped; visible off CD",
+	TrackerIconExecItemVisible5NoCooldownEquip2 = "---",
 
 }
--- index lookup for aura buttons
+-- index lookup for tracker buttons
 local ilt = {}
 
-for i = 1, MAX_AURAS do
+for i = 1, trackerMax do
 	ilt["CD Tracker" .. (i + 2)] = i
 end
 
 for i = 1, 2 do
-	ilt["Trinket" .. i] = MAX_AURAS + i
+	ilt["Trinket" .. i] = trackerMax + i
 end
 
--- aura buttons get/set functions
+-- tracker buttons get/set functions
 local abgs = {}
 
 
 function abgs:UpdateAll()
-	clcret:UpdateEnabledAuraButtons()
-	clcret:UpdateAuraButtonsCooldown()
-	-- clcret:AuraButtonUpdateICD()
-	clcret:AuraButtonResetTextures()
+	clcret:UpdateEnabledTrackerIcons()
+	clcret:UpdateTrackerIconsCooldown()
+	-- clcret:TrackerIconUpdateICD()
+	clcret:TrackerIconResetTextures()
 end
 
 -- enabled toggle
 function abgs:EnabledGet()
 	local i = ilt[self[2]]
 	
-	return db.auras[i].enabled
+	return db.trackers[i].enabled
 end
 
 function abgs:EnabledSet(val)
@@ -77,8 +77,8 @@ function abgs:EnabledSet(val)
 	clcret.temp = info
 	
 	-- Auto-detect trinket if enabling a trinket tracker
-	if val and i > MAX_AURAS then
-		local trinketSlot = i - MAX_AURAS
+	if val and i > trackerMax then
+		local trinketSlot = i - trackerMax
 		local trinketID = clcret:AutoDetectTrinket(trinketSlot)
 		if not trinketID then
 			val = false
@@ -88,13 +88,13 @@ function abgs:EnabledSet(val)
 		
 	end
 	
-	if db.auras[i].data.spell == "" then
+	if db.trackers[i].data.spell == "" then
 		val = false
 		print("Not a valid spell name/id or buff name!")
 	end
 	
-	db.auras[i].enabled = val
-	if not val then clcret:AuraButtonHide(i) end
+	db.trackers[i].enabled = val
+	if not val then clcret:TrackerIconHide(i) end
 	abgs:UpdateAll()
 	
 
@@ -106,27 +106,27 @@ function abgs:SpellGet()
 	local i = ilt[self[2]]
 	
 	-- special case for items since link is used instead of name
-	if (db.auras[i].data.exec == "AuraButtonExecItemVisible1Always") or (db.auras[i].data.exec == "AuraButtonExecItemVisible2NoCooldown") then
-		return db.auras[i].data.spell
+	if (db.trackers[i].data.exec == "TrackerIconExecItemVisible1Always") or (db.trackers[i].data.exec == "TrackerIconExecItemVisible2NoCooldown") then
+		return db.trackers[i].data.spell
 	end
-	return db.auras[i].data.spell
+	return db.trackers[i].data.spell
 end
 function abgs:SpellSet(val)
 	local i = ilt[self[2]]
 
-		if (db.auras[i].data.exec == "AuraButtonExecItemVisible1Always") or (db.auras[i].data.exec == "AuraButtonExecItemVisible2NoCooldown") then
+		if (db.trackers[i].data.exec == "TrackerIconExecItemVisible1Always") or (db.trackers[i].data.exec == "TrackerIconExecItemVisible2NoCooldown") then
 		local name, link = C_Item.GetItemInfo(val)
 		if name then
-			db.auras[i].data.spell = val
+			db.trackers[i].data.spell = val
 		else
-			db.auras[i].data.spell = ""
-			db.auras[i].enabled = false
-			clcret:AuraButtonHide(i)
+			db.trackers[i].data.spell = ""
+			db.trackers[i].enabled = false
+			clcret:TrackerIconHide(i)
 			print("Not a valid item name or id !")
 		end
 
 	else
-		db.auras[i].data.spell = val
+		db.trackers[i].data.spell = val
 	end
 	
 	abgs:UpdateAll()
@@ -136,25 +136,25 @@ end
 function abgs:TrinketExecGet()
 	local i = ilt[self[2]]
 	
-	if i and db.auras[i] then
-		return db.auras[i].data.exec
+	if i and db.trackers[i] then
+		return db.trackers[i].data.exec
 	end
-	-- return "AuraButtonExecaNone"
+	-- return "TrackerIconExecaNone"
 end
 
 function abgs:TrinketExecSet(val)
 	local i = ilt[self[2]]
-	if not i or not db.auras[i] then return end
+	if not i or not db.trackers[i] then return end
 	
-	local aura = db.auras[i]
+	local tracker = db.trackers[i]
 	
-	if val == "AuraButtonExecaNone" or aura.data.exec == "AuraButtonExecaNone" then
-		aura.data.spell = ""
-		aura.enabled = false
+	if val == "TrackerIconExecaNone" or tracker.data.exec == "TrackerIconExecaNone" then
+		tracker.data.spell = ""
+		tracker.enabled = false
 	end
 	
-	clcret:AuraButtonHide(i)
-	aura.data.exec = val
+	clcret:TrackerIconHide(i)
+	tracker.data.exec = val
 	abgs:UpdateAll()
 end
 
@@ -162,24 +162,24 @@ end
 function abgs:ExecGet()
 	local i = ilt[self[2]]
 	
-	return db.auras[i].data.exec
+	return db.trackers[i].data.exec
 end
 function abgs:ExecSet(val)
 	local i = ilt[self[2]]
-	local aura = db.auras[i]
+	local tracker = db.trackers[i]
 	
-	if val == "AuraButtonExecaNone" or aura.data.exec == "AuraButtonExecaNone" then
-		aura.data.spell = ""
+	if val == "TrackerIconExecaNone" or tracker.data.exec == "TrackerIconExecaNone" then
+		tracker.data.spell = ""
 	end
 	
-	clcret:AuraButtonHide(i)
+	clcret:TrackerIconHide(i)
 	
-	aura.data.exec = val
+	tracker.data.exec = val
 	
 	abgs:UpdateAll()
 end
 
-local skillButtonNames = { "Main skill", "Secondary skill" }
+local skillButtonNames = { "Main skill" }
 
 -- Sets to the rotation module db instead of main db
 local function RotationGet(info)
@@ -202,12 +202,12 @@ local function Set(info, val)
 	db[info[#info]] = val
 end
 
-local tx = {}
-for k, v in pairs(clcret.RR_actions) do
-	table.insert(tx, format("\n%s - %s", k, v.info))
-end
-table.sort(tx)
-local prioInfo = "Legend:\n" .. table.concat(tx)
+-- local tx = {}
+-- for k, v in pairs(clcret.RR_actions) do
+	-- table.insert(tx, format("\n%s - %s", k, v.info))
+-- end
+-- table.sort(tx)
+-- local prioInfo = "Legend:\n" .. table.concat(tx)
 
 local options = {
 	type = "group",
@@ -342,9 +342,9 @@ local options = {
 				order = 3.2,
 				type = "select",
 				name = "",
-				get = function(info) return db.rotation.rangeCheckSkill end,
+				get = function(info) return db.rangeCheckSkill end,
 				set = function(info, val)
-				db.rotation.rangeCheckSkill = val
+				db.rangeCheckSkill = val
 				end,
 				-- activate the comment/comment out the alternative line when a melee range check option is needed
 				-- values = { _rangeoff = "Off", rangemelee = "Melee Range", rangeperability = "Per Ability" } -- with melee check
@@ -382,8 +382,8 @@ local options = {
 						type = "toggle", 
 						width = "full", 
 						name = "Suggest equipped on-use trinkets in Main Rotation",
-						get = RotationGet, 
-						set = RotationSet,
+						get = Get, 
+						set = Set,
 					},
 				},
 			},
@@ -430,9 +430,9 @@ local options = {
 					min = 1,
 					max = 100,
 					step = 1,
-					get = function(info) return db.rotation.updatesPerSecond end,
+					get = function(info) return db.updatesPerSecond end,
 					set = function(info, val)
-						db.rotation.updatesPerSecond = val
+						db.updatesPerSecond = val
 						clcret.scanFrequency = 1 / val
 					end,
 				},
@@ -497,7 +497,7 @@ local options = {
 					set = function(info, val)
 						db.zoomIcons = val
 						clcret:UpdateSkillButtonsLayout()
-						clcret:UpdateAuraButtonsLayout()
+						clcret:UpdateTrackerIconsLayout()
 					end,
 				},
 				noBorder = {
@@ -508,7 +508,7 @@ local options = {
 					set = function(info, val)
 						db.noBorder = val
 						clcret:UpdateSkillButtonsLayout()
-						clcret:UpdateAuraButtonsLayout()
+						clcret:UpdateTrackerIconsLayout()
 					end,
 				},
 				borderColor = {
@@ -520,7 +520,7 @@ local options = {
 					set = function(info, r, g, b, a)
 						db.borderColor = {r, g, b, a}
 						clcret:UpdateSkillButtonsLayout()
-						clcret:UpdateAuraButtonsLayout()
+						clcret:UpdateTrackerIconsLayout()
 					end,
 				},
 				borderType = {
@@ -531,7 +531,7 @@ local options = {
 					set = function(info, val)
 						db.borderType = val
 						clcret:UpdateSkillButtonsLayout()
-						clcret:UpdateAuraButtonsLayout()
+						clcret:UpdateTrackerIconsLayout()
 					end,
 					values = { "Light", "Medium", "Heavy" }
 				},
@@ -704,7 +704,7 @@ local options = {
 	
 		rotation = clcret.RR_BuildOptions(),
 
-		auras = {
+		trackers = {
 			order = 30,
 			name = "CD Trackers",
 			type = "group",
@@ -769,26 +769,26 @@ for i = 1, GetNumSpecializations() do
     }
 end
 
--- add the aura buttons to options
-for i = 1, MAX_AURAS do
-	-- aura options
+-- add the tracker buttons to options
+for i = 1, trackerMax do
+	-- tracker options
 	
 	
 local f = (i + 2)
 
 
-		options.args.auras.args["Trinket" .. 1] = {
+		options.args.trackers.args["Trinket" .. 1] = {
 		order = 5.1,
 		type = "group",
 		name = "Trinket " .. 1,
 		args = {
 		
-			_aurainfo = {
+			_trackerinfo = {
 					order = 1,
 					type = "description",
 					name = "-This tracks the trinket in the Top Slot (Slot 13)",
 				},
-			_auraHead = {
+			_trackerHead = {
 					order = 1,
 					type = "header",
 					name = "Tracking Options",
@@ -804,10 +804,10 @@ local f = (i + 2)
 					order = 4,
 					type = "toggle",
 					name = "Glow When Ready",
-					get = function(info) return db.auras[MAX_AURAS + 1].layout.procFlipbook end,
+					get = function(info) return db.trackers[trackerMax + 1].layout.procFlipbook end,
 					set = function(info, val)
-						db.auras[MAX_AURAS + 1].layout.procFlipbook = val
-						clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+						db.trackers[trackerMax + 1].layout.procFlipbook = val
+						clcret:UpdateTrackerIconLayout(trackerMax + 1)
 					end,
 				},
 			
@@ -819,10 +819,10 @@ local f = (i + 2)
 				min = 1,
 				max = 10,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.procFlipbookWidth end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.procFlipbookWidth end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.procFlipbookWidth = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.procFlipbookWidth = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 			},
 			
@@ -831,10 +831,10 @@ local f = (i + 2)
 				type = "color",
 				name = "Glow Color",
 				hasAlpha = true,
-				get = function(info) return unpack(db.auras[MAX_AURAS + 1].layout.procFlipbookColor) end,
+				get = function(info) return unpack(db.trackers[trackerMax + 1].layout.procFlipbookColor) end,
 				set = function(info, r, g, b, a)
-					db.auras[MAX_AURAS + 1].layout.procFlipbookColor = {r, g, b, a}
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.procFlipbookColor = {r, g, b, a}
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 			},
 			
@@ -848,12 +848,12 @@ local f = (i + 2)
 				values = execList,
 			},
 			
-			_auraSpace = {
+			_trackerSpace = {
 					order = 18,
 					type = "description",
 					name = "",
 				},
-			___auraHead = {
+			___trackerHead = {
 					order = 18,
 					type = "header",
 					name = "Size & Positioning",
@@ -865,10 +865,10 @@ local f = (i + 2)
 				min = 1,
 				max = 300,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.size end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.size end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.size = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.size = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 			},
 			_sizSpace = {
@@ -880,10 +880,10 @@ local f = (i + 2)
 				order = 23,
 				type = "select",
 				name = "Anchor",
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.point end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.point end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.point = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.point = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 				values = anchorPoints,
 			},
@@ -891,10 +891,10 @@ local f = (i + 2)
 				order = 25,
 				type = "select",
 				name = "Anchor To",
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.pointParent end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.pointParent end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.pointParent = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.pointParent = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 				values = anchorPoints,
 			},
@@ -905,10 +905,10 @@ local f = (i + 2)
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.x end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.x end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.x = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.x = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 			},
 			y = {
@@ -918,10 +918,10 @@ local f = (i + 2)
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 1].layout.y end,
+				get = function(info) return db.trackers[trackerMax + 1].layout.y end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 1].layout.y = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 1)
+					db.trackers[trackerMax + 1].layout.y = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 1)
 				end,
 			},
 		
@@ -930,18 +930,18 @@ local f = (i + 2)
 }
 
 
-options.args.auras.args["Trinket" .. 2] = {
+options.args.trackers.args["Trinket" .. 2] = {
 		order = 5.1,
 		type = "group",
 		name = "Trinket " .. 2,
 		args = {
 		
-			_aurainfo = {
+			_trackerinfo = {
 					order = 1,
 					type = "description",
-					name = "-This tracks the trinket in the Top Slot (Slot 13)",
+					name = "-This tracks the trinket in the Bottom Slot (Slot 14)",
 				},
-			_auraHead = {
+			_trackerHead = {
 					order = 1,
 					type = "header",
 					name = "Tracking Options",
@@ -956,11 +956,11 @@ options.args.auras.args["Trinket" .. 2] = {
 									procFlipbook = {
 					order = 4,
 					type = "toggle",
-					name = "Proc Loop Effect",
-					get = function(info) return db.auras[MAX_AURAS + 2].layout.procFlipbook end,
+					name = "Glow When Ready",
+					get = function(info) return db.trackers[trackerMax + 2].layout.procFlipbook end,
 					set = function(info, val)
-						db.auras[MAX_AURAS + 2].layout.procFlipbook = val
-						clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+						db.trackers[trackerMax + 2].layout.procFlipbook = val
+						clcret:UpdateTrackerIconLayout(trackerMax + 2)
 					end,
 				},
 			
@@ -972,10 +972,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = 1,
 				max = 10,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.procFlipbookWidth end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.procFlipbookWidth end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.procFlipbookWidth = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.procFlipbookWidth = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 			},
 			
@@ -984,10 +984,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				type = "color",
 				name = "Glow Color",
 				hasAlpha = true,
-				get = function(info) return unpack(db.auras[MAX_AURAS + 2].layout.procFlipbookColor) end,
+				get = function(info) return unpack(db.trackers[trackerMax + 2].layout.procFlipbookColor) end,
 				set = function(info, r, g, b, a)
-					db.auras[MAX_AURAS + 2].layout.procFlipbookColor = {r, g, b, a}
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.procFlipbookColor = {r, g, b, a}
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 			},
 			
@@ -1001,12 +1001,12 @@ options.args.auras.args["Trinket" .. 2] = {
 				values = execList,
 			},
 			
-			_auraSpace = {
+			_trackerSpace = {
 					order = 18,
 					type = "description",
 					name = "",
 				},
-			___auraHead = {
+			___trackerHead = {
 					order = 18,
 					type = "header",
 					name = "Size & Positioning",
@@ -1018,10 +1018,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = 1,
 				max = 300,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.size end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.size end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.size = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.size = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 			},
 			_sizSpace = {
@@ -1033,10 +1033,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				order = 23,
 				type = "select",
 				name = "Anchor",
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.point end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.point end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.point = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.point = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 				values = anchorPoints,
 			},
@@ -1044,10 +1044,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				order = 25,
 				type = "select",
 				name = "Anchor To",
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.pointParent end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.pointParent end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.pointParent = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.pointParent = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 				values = anchorPoints,
 			},
@@ -1058,10 +1058,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.x end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.x end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.x = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.x = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 			},
 			y = {
@@ -1071,10 +1071,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[MAX_AURAS + 2].layout.y end,
+				get = function(info) return db.trackers[trackerMax + 2].layout.y end,
 				set = function(info, val)
-					db.auras[MAX_AURAS + 2].layout.y = val
-					clcret:UpdateAuraButtonLayout(MAX_AURAS + 2)
+					db.trackers[trackerMax + 2].layout.y = val
+					clcret:UpdateTrackerIconLayout(trackerMax + 2)
 				end,
 			},
 		
@@ -1083,24 +1083,24 @@ options.args.auras.args["Trinket" .. 2] = {
 }
 
 
-	options.args.auras.args["CD Tracker" .. f] = {
+	options.args.trackers.args["CD Tracker" .. f] = {
 		order = f + 10,
 		type = "group",
 		name = "CD Tracker " .. i,
 		args = {
 			
 			
-			_aurainfo = {
+			_trackerinfo = {
 					order = 1,
 					type = "description",
 					name = "-These are cooldown watchers. You can select an item or consumable to watch.",
 				},
-			_aurainfo2 = {
+			_trackerinfo2 = {
 					order = 1,
 					type = "description",
 					name = "-You can NOT track Buffs/Debuffs or Spells.",
 				},
-			_auraHead = {
+			_trackerHead = {
 					order = 1,
 					type = "header",
 					name = "Item Trackers",
@@ -1116,11 +1116,11 @@ options.args.auras.args["Trinket" .. 2] = {
 							procFlipbook = {
 					order = 4,
 					type = "toggle",
-					name = "Proc Loop Effect",
-					get = function(info) return db.auras[i].layout.procFlipbook end,
+					name = "Glow When Ready",
+					get = function(info) return db.trackers[i].layout.procFlipbook end,
 					set = function(info, val)
-						db.auras[i].layout.procFlipbook = val
-						clcret:UpdateAuraButtonLayout(i)
+						db.trackers[i].layout.procFlipbook = val
+						clcret:UpdateTrackerIconLayout(i)
 					end,
 				},
 			
@@ -1131,10 +1131,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = 1,
 				max = 10,
 				step = 1,
-				get = function(info) return db.auras[i].layout.procFlipbookWidth end,
+				get = function(info) return db.trackers[i].layout.procFlipbookWidth end,
 				set = function(info, val)
-					db.auras[i].layout.procFlipbookWidth = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.procFlipbookWidth = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 			},
 			
@@ -1143,10 +1143,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				type = "color",
 				name = "Glow Color",
 				hasAlpha = true,
-				get = function(info) return unpack(db.auras[i].layout.procFlipbookColor) end,
+				get = function(info) return unpack(db.trackers[i].layout.procFlipbookColor) end,
 				set = function(info, r, g, b, a)
-					db.auras[i].layout.procFlipbookColor = {r, g, b, a}
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.procFlipbookColor = {r, g, b, a}
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 			},
 			
@@ -1165,12 +1165,12 @@ options.args.auras.args["Trinket" .. 2] = {
 				set = abgs.ExecSet,
 				values = execList,
 			},
-			_auraSpace = {
+			_trackerSpace = {
 					order = 18,
 					type = "description",
 					name = "",
 				},
-			___auraHead = {
+			___trackerHead = {
 					order = 18,
 					type = "header",
 					name = "Size & Positioning",
@@ -1182,10 +1182,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = 1,
 				max = 300,
 				step = 1,
-				get = function(info) return db.auras[i].layout.size end,
+				get = function(info) return db.trackers[i].layout.size end,
 				set = function(info, val)
-					db.auras[i].layout.size = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.size = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 			},
 			_sizSpace = {
@@ -1197,10 +1197,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				order = 23,
 				type = "select",
 				name = "Anchor",
-				get = function(info) return db.auras[i].layout.point end,
+				get = function(info) return db.trackers[i].layout.point end,
 				set = function(info, val)
-					db.auras[i].layout.point = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.point = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 				values = anchorPoints,
 			},
@@ -1208,10 +1208,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				order = 25,
 				type = "select",
 				name = "Anchor To",
-				get = function(info) return db.auras[i].layout.pointParent end,
+				get = function(info) return db.trackers[i].layout.pointParent end,
 				set = function(info, val)
-					db.auras[i].layout.pointParent = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.pointParent = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 				values = anchorPoints,
 			},
@@ -1222,10 +1222,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[i].layout.x end,
+				get = function(info) return db.trackers[i].layout.x end,
 				set = function(info, val)
-					db.auras[i].layout.x = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.x = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 			},
 			y = {
@@ -1235,10 +1235,10 @@ options.args.auras.args["Trinket" .. 2] = {
 				min = -1000,
 				max = 1000,
 				step = 1,
-				get = function(info) return db.auras[i].layout.y end,
+				get = function(info) return db.trackers[i].layout.y end,
 				set = function(info, val)
-					db.auras[i].layout.y = val
-					clcret:UpdateAuraButtonLayout(i)
+					db.trackers[i].layout.y = val
+					clcret:UpdateTrackerIconLayout(i)
 				end,
 			},
 		},
