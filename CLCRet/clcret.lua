@@ -3,7 +3,7 @@ local _, xmod = ...
 
 clcret = LibStub("AceAddon-3.0"):NewAddon("clcret", "AceEvent-3.0", "AceConsole-3.0")
 
-local MAX_AURAS = 10
+local trackerMax = 10
 
 local BGTEX = "Interface\\AddOns\\clcret\\textures\\minimalist"
 local BORDERTEX = "Interface\\AddOns\\clcret\\textures\\border"
@@ -20,10 +20,10 @@ local nq = {}
 -- main and secondary skill buttons
 local buttons = {}
 -- configurable buttons
-local auraButtons = {}
-local enabledAuraButtons
-local numEnabledAuraButtons 
-local auraIndex
+local trackerIcons = {}
+local enabledTrackerIcons
+local numEnabledTrackerIcons 
+local trackerIndex
 
 -- addon status
 local addonEnabled = false			-- enabled
@@ -137,6 +137,8 @@ local defaults = {
 		spec4Enable = true,
 		button1 = false,
 		updatesPerSecond = 10,
+		rangeCheckSkill = "_rangeoff",
+		trinketMode = false,
 		
 		-- icd
 		-- icd = {
@@ -162,18 +164,18 @@ local defaults = {
 			},
 		},
 		
-		-- aura buttons
+		-- tracker buttons
 		trackers = {},
 		
 	}
 }
 
--- blank rest of the auras buttons in default options
-for i = 1, MAX_AURAS + 2 do 
+-- blank rest of the trackers buttons in default options
+for i = 1, trackerMax + 2 do 
 	defaults.profile.trackers[i] = {
 		enabled = false,
 		data = {
-			exec = "AuraButtonExecNone",
+			exec = "TrackerIconExecNone",
 			spell = "",
 		},
 		layout = {
@@ -210,13 +212,13 @@ end
 -- ROTATION MODULE INITIALIZATION
 -- ---------------------------------------------------------------------------------------------------------------------
 -- Only set default values if not present/empty
-	local function EnsureDefaults(db_rotation, defaults)
-		for k, v in pairs(defaults) do
-			if db_rotation[k] == nil or db_rotation[k] == "" then
-				db_rotation[k] = v
-			end
-		end
-	end
+	-- local function EnsureDefaults(db_rotation, defaults)
+		-- for k, v in pairs(defaults) do
+			-- if db_rotation[k] == nil or db_rotation[k] == "" then
+				-- db_rotation[k] = v
+			-- end
+		-- end
+	-- end
 
 -- Avoid errors before init
 clcret.RR_BuildOptions = function() end
@@ -367,11 +369,11 @@ function clcret:QUEST_LOG_UPDATE()
 	self:RegisterChatCommand("clcret", ShowOptions)
 	-- self:RegisterChatCommand("clcretlp", CmdLinePrio)
 	self:RegisterChatCommand("rl", ReloadUI)
-	self:UpdateEnabledAuraButtons()
+	self:UpdateEnabledTrackerIcons()
 	
 	self:RR_UpdateQueue()
 	self:InitUI()
-	self:UpdateAuraButtonsCooldown()
+	self:UpdateTrackerIconsCooldown()
 	self:PLAYER_TALENT_UPDATE()
 	
 	if self.LBF then
@@ -402,7 +404,7 @@ function clcret:OnSkin(skin, glossAlpha, gloss, group, _, colors)
 		styleDB[4] = colors
 	end
 	
-	self:UpdateAuraButtonsLayout()
+	self:UpdateTrackerIconsLayout()
 	self:UpdateSkillButtonsLayout()
 end
 
@@ -502,7 +504,7 @@ function clcret:PLAYER_EQUIPMENT_CHANGED()
 	
 	-- Check both trinket slots
 	for trinketSlot = 1, 2 do
-		local trinketIndex = MAX_AURAS + trinketSlot
+		local trinketIndex = trackerMax + trinketSlot
 		
 		-- Only update if the trinket is enabled
 		if db.trackers[trinketIndex].enabled then
@@ -514,14 +516,14 @@ function clcret:PLAYER_EQUIPMENT_CHANGED()
 			if newTrinketID and newTrinketID ~= currentTrinketID then
 	db.trackers[trinketIndex].data.spell = tostring(newTrinketID)
 
-	local btn = auraButtons[trinketIndex]
+	local btn = trackerIcons[trinketIndex]
 	if btn and btn.cooldown then
 		btn.cooldown:Clear()
 		btn.cooldown:Hide()
 	end
 
-	clcret:UpdateAuraButtonLayout(trinketIndex)
-	clcret:AuraButtonResetTexture(trinketIndex)
+	clcret:UpdateTrackerIconLayout(trinketIndex)
+	clcret:TrackerIconResetTexture(trinketIndex)
 end
 		end
 	end
@@ -529,14 +531,14 @@ end
 
 
 -- just show the button for positioning
-function clcret:AuraButtonExecaNone(index)
-	auraButtons[auraIndex]:Show()
+function clcret:TrackerIconExecaNone(index)
+	trackerIcons[trackerIndex]:Show()
 end
 
 -- shows a usable item always and with a visible cooldown when needed
-function clcret:AuraButtonExecItemVisible1Always()
-	local index = auraIndex
-	local button = auraButtons[index]
+function clcret:TrackerIconExecItemVisible1Always()
+	local index = trackerIndex
+	local button = trackerIcons[index]
 	local data = db.trackers[index].data
 
 	-- fix the texture once
@@ -571,9 +573,9 @@ function clcret:AuraButtonExecItemVisible1Always()
 	
 end
 -- shows shows a usable item only when out of cooldown
-function clcret:AuraButtonExecItemVisible2NoCooldown()
-	local index = auraIndex
-	local button = auraButtons[index]
+function clcret:TrackerIconExecItemVisible2NoCooldown()
+	local index = trackerIndex
+	local button = trackerIcons[index]
 	local data = db.trackers[index].data
 
 	-- fix the texture once
@@ -609,9 +611,9 @@ function clcret:AuraButtonExecItemVisible2NoCooldown()
 	
 end
 -- shows shows an Equipped usable item only when off cooldown
-function clcret:AuraButtonExecItemVisible4NoCooldownEquip()
-	local index = auraIndex
-	local button = auraButtons[index]
+function clcret:TrackerIconExecItemVisible4NoCooldownEquip()
+	local index = trackerIndex
+	local button = trackerIcons[index]
 	local data = db.trackers[index].data
 
 	-- fix the texture once
@@ -653,9 +655,9 @@ function clcret:AuraButtonExecItemVisible4NoCooldownEquip()
 end
 
 -- shows shows an Equipped usable item , always visible
-function clcret:AuraButtonExecItemVisible3AlwaysEquip()
-	local index = auraIndex
-	local button = auraButtons[index]
+function clcret:TrackerIconExecItemVisible3AlwaysEquip()
+	local index = trackerIndex
+	local button = trackerIcons[index]
 	local data = db.trackers[index].data
 
 	-- fix the texture once
@@ -733,14 +735,14 @@ end
 -- Range Check Settings !!!!
 function clcret:CheckRange()
 
-	if db.rotation.rangeCheckSkill == "_rangeoff" then
+	if db.rangeCheckSkill == "_rangeoff" then
 		-- for i = 1, 2 do
 			buttons[1].texture:SetVertexColor(1, 1, 1)
 		-- end
 		return
 	end
 	
-	if db.rotation.rangeCheckSkill == "rangeperability" then
+	if db.rangeCheckSkill == "rangeperability" then
 		-- each skill shows the range of the ability
 		-- for i = 1, 2 do
 			local inRange = C_Spell.IsSpellInRange(dq[1], "target")
@@ -751,7 +753,7 @@ function clcret:CheckRange()
 			end
 		-- end	
 		
-	elseif db.rotation.rangeCheckSkill == "rangemelee" then
+	elseif db.rangeCheckSkill == "rangemelee" then
 	
 		-- each skill show melee range
 		local spellID = GetMeleeRangeCheckSpell()
@@ -920,7 +922,7 @@ function clcret:CenterHorizontally()
 	self:UpdateFrameSettings()
 end
 
--- update for aura buttons 
+-- update for tracker buttons 
 function clcret:UpdateSkillButtonsLayout()
 	clcretFrame:SetWidth(db.layout.button1.size + 10)
 	clcretFrame:SetHeight(db.layout.button1.size + 10)
@@ -936,15 +938,15 @@ function clcret:UpdateSkillButtonsLayout()
 	end
 	
 end
--- update aura buttons 
-function clcret:UpdateAuraButtonsLayout()
-	for i = 1, MAX_AURAS do
-		self:UpdateButtonLayout(auraButtons[i], db.trackers[i].layout)
+-- update tracker buttons 
+function clcret:UpdateTrackerIconsLayout()
+	for i = 1, trackerMax do
+		self:UpdateButtonLayout(trackerIcons[i], db.trackers[i].layout)
 	end
 end
--- update aura for a single button
-function clcret:UpdateAuraButtonLayout(index)
-	self:UpdateButtonLayout(auraButtons[index], db.trackers[index].layout)
+-- update tracker for a single button
+function clcret:UpdateTrackerIconLayout(index)
+	self:UpdateButtonLayout(trackerIcons[index], db.trackers[index].layout)
 end
 
 -- update a given button
@@ -1046,8 +1048,8 @@ function clcret:InitUI()
 	buttons[1]:SetAlpha(opt.alpha)
 	buttons[1]:Show()
 	
-	-- aura buttons
-	self:InitAuraButtons()
+	-- tracker buttons
+	self:InitTrackerIcons()
 	
 	-- set scale, alpha, position
 	self:UpdateFrameSettings()
@@ -1063,16 +1065,16 @@ function clcret:AutoDetectTrinket(trinketSlot)
 	local trinketID = GetInventoryItemID("player", slotNum)
 	
 	if trinketID then
-		local trinketIndex = MAX_AURAS + trinketSlot
+		local trinketIndex = trackerMax + trinketSlot
 		db.trackers[trinketIndex].data.spell = tostring(trinketID)
 		
 		-- Only set exec type if it's not already set (preserve user's choice)
-		if db.trackers[trinketIndex].data.exec == "AuraButtonExecaNone" then
-			db.trackers[trinketIndex].data.exec = "AuraButtonExecItemVisible2NoCooldown"
+		if db.trackers[trinketIndex].data.exec == "TrackerIconExecaNone" then
+			db.trackers[trinketIndex].data.exec = "TrackerIconExecItemVisible2NoCooldown"
 		end
 		
-		clcret:UpdateAuraButtonLayout(trinketIndex)
-		clcret:UpdateEnabledAuraButtons()
+		clcret:UpdateTrackerIconLayout(trinketIndex)
+		clcret:UpdateEnabledTrackerIcons()
 		
 		return trinketID
 	end
@@ -1081,17 +1083,17 @@ function clcret:AutoDetectTrinket(trinketSlot)
 end
 
 
--- initialize aura buttons
-function clcret:InitAuraButtons()
+-- initialize tracker buttons
+function clcret:InitTrackerIcons()
 	local data, layout
-	for i = 1, MAX_AURAS + 2 do
+	for i = 1, trackerMax + 2 do
 		data = db.trackers[i].data
 		layout = db.trackers[i].layout
-		auraButtons[i] = self:CreateButton("aura"..i, layout.size, layout.point, clcretFrame, layout.pointParent, layout.x, layout.y, "Trackers", nil, layout.procFlipbookColor)
-		auraButtons[i].start = 0
-		auraButtons[i].duration = 0
-		auraButtons[i].expirationTime = 0
-		auraButtons[i].hasTexture = false
+		trackerIcons[i] = self:CreateButton("tracker"..i, layout.size, layout.point, clcretFrame, layout.pointParent, layout.x, layout.y, "Trackers", nil, layout.procFlipbookColor)
+		trackerIcons[i].start = 0
+		trackerIcons[i].duration = 0
+		trackerIcons[i].expirationTime = 0
+		trackerIcons[i].hasTexture = false
 	end
 end
 
@@ -1231,7 +1233,7 @@ function clcret:FullDisableToggle()
 		
 		-- register events
 		self:RegisterEvent("PLAYER_TALENT_UPDATE")
-		self:RegisterCLEU()
+		-- self:RegisterCLEU()
 		
 		-- do the normal load routine
 		self:PLAYER_TALENT_UPDATE()
@@ -1248,7 +1250,7 @@ function clcret:FullDisableToggle()
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 		self:UnregisterEvent("UNIT_FACTION")
 		
-		self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+		-- self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 		
 		self:UnregisterEvent("PLAYER_EQUIPMENT_CHANGED")
 		
@@ -1260,35 +1262,35 @@ end
 -- ------------------
 -- HELPER FUNCTIONS
 -- ------------------
-function clcret:AuraButtonResetTextures()
-	for i = 1, MAX_AURAS do
-		auraButtons[i].hasTexture = false
+function clcret:TrackerIconResetTextures()
+	for i = 1, trackerMax do
+		trackerIcons[i].hasTexture = false
 	end
 end
-function clcret:AuraButtonResetTexture(index)
-	auraButtons[index].hasTexture = false
+function clcret:TrackerIconResetTexture(index)
+	trackerIcons[index].hasTexture = false
 end
-function clcret:AuraButtonHide(index)
-	auraButtons[index]:Hide()
+function clcret:TrackerIconHide(index)
+	trackerIcons[index]:Hide()
 end
 -- reversed and edged cooldown look for buffs and debuffs
-function clcret:UpdateAuraButtonsCooldown()
-	for i = 1, MAX_AURAS do
-		if (db.trackers[i].data.exec == "AuraButtonExecGenericBuff") or (db.trackers[i].data.exec == "AuraButtonExecGenericDebuff") then
-			auraButtons[i].cooldown:SetReverse(true)
+function clcret:UpdateTrackerIconsCooldown()
+	for i = 1, trackerMax do
+		if (db.trackers[i].data.exec == "TrackerIconExecGenericBuff") or (db.trackers[i].data.exec == "TrackerIconExecGenericDebuff") then
+			trackerIcons[i].cooldown:SetReverse(true)
 		else
-			auraButtons[i].cooldown:SetReverse(false)
+			trackerIcons[i].cooldown:SetReverse(false)
 		end
 	end
 end
--- update the used aura buttons to shorten the for
-function clcret:UpdateEnabledAuraButtons()
-	numEnabledAuraButtons = 0
-	enabledAuraButtons = {}
-	for i = 1, MAX_AURAS + 2 do
+-- update the used tracker buttons to shorten the for
+function clcret:UpdateEnabledTrackerIcons()
+	numEnabledTrackerIcons = 0
+	enabledTrackerIcons = {}
+	for i = 1, trackerMax + 2 do
 		if db.trackers[i].enabled then
-			numEnabledAuraButtons = numEnabledAuraButtons + 1
-			enabledAuraButtons[numEnabledAuraButtons] = i
+			numEnabledTrackerIcons = numEnabledTrackerIcons + 1
+			enabledTrackerIcons[numEnabledTrackerIcons] = i
 		end
 	end
 end
